@@ -60,6 +60,14 @@ intl = transform(intl, Region = reorder(Region, -PercentOfIntl))
 lm(x~ . -z, data=df)
 #drop the incept term
 lm(x~ 0 + y + z, data=df)
+
+# function to remove intercept term, modelling the seasonal trend in time series
+dairy.seasons <- function(df, col = 'Milk.Prod'){
+  df$y = df[, col]
+  fit = lm(y ~ 0 + Month, data = df)
+  predict(fit, newdata = df)
+}
+
 #use functions
 lm(x~ y + I(y^2) + z + I(z+2), data=df)
 #interaction term

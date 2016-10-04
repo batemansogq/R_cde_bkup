@@ -316,60 +316,74 @@ write.csv(df_full, file="E://R/Football/df_full.csv", row.names = FALSE)
 #reorder df for ease of function
 df_full <- cbind(df_full[,c(1,3,11:12)],df_full[,c(-1,-3,-11:-12)] )
 
-#current detail
-head(df_full[, c(1:4, 31:39)])
+#current detail, including HvsA Ind
+head(df_full[, c(1:4, 31:39, 58)])
 #detail previous
-head(df_full[,c(1:30,  41:75)])
+head(df_full[,c(1:30,  41:57, 59:75)])
 
 ## refactor for updated df 
+
 
 #get the lagged values, based upon sets
 lag_set <- function() {
   #create the results df
-  df_lag_res <- df_full[0,c(1:30,  41:75)]
+  df_lag_res <- df_full[0,c(1:30,  41:57, 59:75)]
+  #re-order for the merge
+  df_lag_res <- df_lag_res[c(1:4, 11, 5:10, 12:64)]
    
   #make the distinct list of teams
   df_lag_tm <- df_full %>% distinct(tm, Year)
   
   for (i in 1:nrow(df_lag_tm)) { 
     #filter the df with for each team/season 
-    df_lag_frm <- df_full[,c(1:30,  41:75)] %>%
+    df_lag_frm <- df_full[,c(1:30,  41:57, 59:75)] %>%
       dplyr::filter(tm==df_lag_tm[i,1], Year==df_lag_tm[i,2] ) %>%
       arrange(Rd)
     #break up the df & drop the last row
-    df_lag_data <- df_lag_frm[-38,c(5:30,  41:75)]
+    df_lag_data <- df_lag_frm[-38,c(5:10, 12:64)]
     #generate a NA row
-    lag_rw <- seq(0,61,1)
+    lag_rw <- seq(0,60,1)
     lag_rw[] <- NA
     #create the lagged season view
     df_lag_data <- rbind(lag_rw, df_lag_data)
     
     #make complete df for Team/season
-    df_lag_sub <- cbind((df_lag_frm[,c(1:4)]),df_lag_data )
+    df_lag_sub <- cbind((df_lag_frm[,c(1:4,11)]),df_lag_data )
     #add back on to results df
     df_lag_res <- rbind(df_lag_res, df_lag_sub)
   }
   #update col names
-  colnames(df_lag_res)[4:65] <- paste0("Lg_", names(df_lag_res[,4:39]))
+  colnames(df_lag_res)[6:64] <- paste0("Lg_", names(df_lag_res[,6:64]))
   return (df_lag_res)
 }
 
 # get the lagged detail for the modeling
 df_lag <- lag_set()
 #create the final model data set.
-df_lag_full <- df_full[, c(1:4, 31:39)] %>% 
-  join(df_lag, c( "Rd"="Rd", "tm" = "tm", "Year"="Year")) 
+df_lag_full <- df_full[, c(1:4,11, 31:39, 58)] %>% 
+  join(df_lag[,c(-3, -4)], c( "Rd"="Rd", "tm" = "tm", "Year"="Year")) 
+
+##########################################
+# start here
+# sort the betting stuff out, relate to team, not H & A
+##########################################
+
 
 #check file
-write.csv2(df_lag_full, file="E://R/Football/df_lag_full.csv", row.names = FALSE)
+write.csv(df_lag_full, file="E://R/Football/df_lag_full.csv", row.names = FALSE)
+
 
 #create opp df
-df_lag_opp <- df_lag_full[,c(1:10,22:57)]
+df_lag_opp <- df_lag_full[,c(-3,-6:-14)]
 #update column names
 colnames(df_lag_opp) <- paste0("Opp_", names(df_lag_opp))
 #join back for model view hm & away
 #join back to full dataframe to complete the dataset.
 df_model <- df_lag_full %>% left_join(df_lag_opp, c("Opp.Team" = "Opp_tm", "Year"="Opp_Year", "Rd"="Opp_Rd"))
+#remove NA rds for random forest modeling 
+df_model<- subset(df_model, Rd != 1)
+#add in the result of the match for the modeling
+df_model <- df_full %>% select(tm, dt, Res) %>% inner_join(df_model, c("tm"="tm", "dt"="dt"))
 
 #check file
 write.csv(df_model, file="E://R/Football/df_model.csv", row.names = FALSE)

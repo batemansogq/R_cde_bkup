@@ -186,7 +186,20 @@ sort(tapply(is.na(CPS$MetroAreaCode), CPS$State, mean))
 	                                                (ifelse(rw<3,lag(hm_elo, 1, order_by=i), 
 	                                                        ifelse(rw<4,lag(hm_elo, 2, order_by=i),lag(hm_elo, 3, order_by=i))))))
 	
-# use zoo for rolling sum of previous period
+#drop columns with dyplr
+	df_full=df_full %>% 
+	  mutate(hm_b365 = ifelse(H_A=='H', B365H, B365A),
+	         opp_365 = ifelse(H_A=='H', B365A, B365H),
+	         hm_bw = ifelse(H_A=='H', BWH, BWA),
+	         opp_bw = ifelse(H_A=='H', BWA, BWH),
+	         hm_lb = ifelse(H_A=='H', LBH, LBA),
+	         opp_lb = ifelse(H_A=='H', LBA, LBH),
+	  ) %>%
+	  ungroup() %>%
+	  select(-31, -33,-34, -36,-37, -39)
+	
+	
+	# use zoo for rolling sum of previous period
 	df_frm <- df_away %>% 
 	  select(aw_tm, dt, Res) %>%
 	  dplyr::filter(aw_tm==df_tm[i,1]) %>% 

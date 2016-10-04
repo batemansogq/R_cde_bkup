@@ -351,65 +351,74 @@ write.csv2(df_full, file="E://R/Football/df_full.csv", row.names = FALSE)
 #check file
 df_full <-read.csv2("df_full.csv", header =TRUE, sep=",", stringsAsFactors = FALSE) 
 
-##############################################
-# start here
-##############################################
+#mutate betting columns
+df_full=df_full %>% 
+  mutate(hm_b365 = ifelse(H_A=='H', B365H, B365A),
+         opp_365 = ifelse(H_A=='H', B365A, B365H),
+         hm_bw = ifelse(H_A=='H', BWH, BWA),
+         opp_bw = ifelse(H_A=='H', BWA, BWH),
+         hm_lb = ifelse(H_A=='H', LBH, LBA),
+         opp_lb = ifelse(H_A=='H', LBA, LBH),
+         ) %>%
+  ungroup() %>%
+  select(-31, -33,-34, -36,-37, -39)
+   
 
 #remove excess columns
-df_full <- df_full[, c(1:15, 20, 31:33, 40:45 )]
+#df_full <- df_full[, c(1:15, 20, 31:33, 40:45 )]
 
 #reorder df for ease of function
-df_full <- cbind(df_full[,c(1:12, 15, 17:19,24 )],df_full[,c(13:14,16,20:23,25 )] )
+df_full <- cbind(df_full[,c(1,3, 9, 11, 12, 15, 31:33, 70:75 )],df_full[,c(2,4:8,10, 13:14,16:30, 34:69)] )
 
 #current detail
-head(df_full[, c(1:4, 31:39)])
+head(df_full[, c(1:15)])
 #detail previous
-head(df_full[,c(1:30,  41:75)])
+head(df_full[,c(1:3,  16:74)])
 
 ## refactor for updated df 
 
 #get the lagged values, based upon sets
 lag_set <- function() {
   #create the results df
-  df_lag_res <- df_full[0,c(1:30,  41:75)]
+  df_lag_res <- df_full[0,c(1:3,  16:75)]
   
   #make the distinct list of teams
   df_lag_tm <- df_full %>% distinct(tm, Year)
   
   for (i in 1:nrow(df_lag_tm)) { 
     #filter the df with for each team/season 
-    df_lag_frm <- df_full[,c(1:30,  41:75)] %>%
+    df_lag_frm <- df_full[,c(1:3,  16:75)] %>%
       dplyr::filter(tm==df_lag_tm[i,1], Year==df_lag_tm[i,2] ) %>%
       arrange(Rd)
     #break up the df & drop the last row
-    df_lag_data <- df_lag_frm[-38,c(5:30,  41:75)]
+    df_lag_data <- df_lag_frm[-38,c(4:63)]
     #generate a NA row
-    lag_rw <- seq(0,61,1)
+    lag_rw <- seq(0,58,1)
     lag_rw[] <- NA
     #create the lagged season view
     df_lag_data <- rbind(lag_rw, df_lag_data)
     
     #make complete df for Team/season
-    df_lag_sub <- cbind((df_lag_frm[,c(1:4)]),df_lag_data )
+    df_lag_sub <- cbind((df_lag_frm[,c(1:3)]),df_lag_data )
     #add back on to results df
     df_lag_res <- rbind(df_lag_res, df_lag_sub)
   }
   #update col names
-  colnames(df_lag_res)[4:65] <- paste0("Lg_", names(df_lag_res[,4:39]))
+  colnames(df_lag_res)[4:63] <- paste0("Lg_", names(df_lag_res[,4:63]))
   return (df_lag_res)
 }
 
 # get the lagged detail for the modeling
 df_lag <- lag_set()
 #create the final model data set.
-df_lag_full <- df_full[, c(1:4, 31:39)] %>% 
+df_lag_full <- df_full[, c(1:15)] %>% 
   join(df_lag, c( "Rd"="Rd", "tm" = "tm", "Year"="Year")) 
 
 #check file
 write.csv2(df_lag_full, file="E://R/Football/df_lag_full.csv", row.names = FALSE)
 
 #create opp df
-df_lag_opp <- df_lag_full[,c(1:10,22:57)]
+df_lag_opp <- df_lag_full[,c(1:3, 16:57, 59:75)]
 #update column names
 colnames(df_lag_opp) <- paste0("Opp_", names(df_lag_opp))
 #join back for model view hm & away
