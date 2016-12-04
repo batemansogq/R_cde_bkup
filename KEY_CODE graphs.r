@@ -2,6 +2,9 @@
 install.packages("ggplot2")
 library(ggplot2)
 
+#show all colour brewer plattes
+display.brewer.all()
+
 # Create the ggplot object with the data and the aesthetic mapping:
 scatterplot = ggplot(WHO, aes(x = GNI, y = FertilityRate))
 # Add the geom_point geometry
