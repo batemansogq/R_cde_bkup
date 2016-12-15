@@ -81,8 +81,8 @@ Con_CSV <- read.csv2("E://R/Twitter/Locations_Conts.csv", header=FALSE,
 #drop join col to lower
 Con_CSV$V1 <- tolower(Con_CSV$V1)
 
-twitterMap <- function(userName,fileName="twitterMap.pdf",
-                       plotType=c("followers","both","following")){
+#twitterMap <- function(userName,fileName="twitterMap.pdf",
+ #                      plotType=c("followers","both","following")){
   
   # Get location data
   cat("Getting data from Twitter, this may take a moment.\n")
@@ -321,17 +321,17 @@ worldmap = ggplot(aes(x = long.recenter, y = lat,col="#191919"), data = worldmap
   ggtitle(paste(userName," Follower Map",sep=""))+
   coord_equal() +  theme_bw() + 
   theme(
-    # legend.position = "none",
+        legend.position = "none",
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title.x = element_blank(),
         axis.title.y = element_blank(),
         plot.title = element_text(colour = "grey65"),
         axis.text.y = element_blank(),
-        axis.ticks = element_blank(), 
+        axis.ticks = element_blank() ,
         panel.border = element_rect(colour = "black"),
         panel.background = element_rect(fill = "black", colour = "black"),
-        plot.background = element_rect(fill = "black", colour = "black")
+       plot.background = element_rect(fill = "black", colour = "black")
             )
 
 tst_line = tst_followers %>% filter(V2!="Parts Unknown") %>% 
@@ -345,14 +345,35 @@ tst_line = tst_followers %>% filter(V2!="Parts Unknown") %>%
 #bubble colour
 #bubble size
 
+leg_tab <- melt(table(tst_followers$V2))
+colnames(leg_tab) <- c("continents", "Followers")
+
+library(gridExtra)
+library(reshape2)
+
 # Plot the CRAN Mirrors
-worldmap = worldmap + 
+worldmap1 = worldmap + 
   geom_point(data = tst_line, aes(lon.recent, lat , colour = col), 
              pch = 19, size = 3, alpha = .6) +
   scale_colour_manual(breaks = tst_line$V2, 
                       values = unique(as.character(tst_line$col)))+
-  ggtitle(paste(userName," Follower Map",sep="")) 
+  ggtitle(paste(userName," Follower Map",sep="")) + 
+  scale_fill_discrete(breaks=tst_line$V2,
+                      labels=tst_line$V2)
+  #annotation_custom(tableGrob(leg_tab), xmin=200, xmax=205, ymin=2.5, ymax=1)
 
+leg <- leg_tab
+
+grid.arrange( worldmap1,
+             tableGrob(leg,
+                       gridExtra::ttheme_default(
+                         core = list(fg_params=list(cex = 2.0)),
+                         colhead = list(fg_params=list(cex = 1.0)),
+                         rowhead = list(fg_params=list(cex = 1.0)))),
+             ncol=2, widths=c(1, 1), clip=FALSE)
+
+plot(worldmap1)
+dev.off()
 # geom_line(aes(x1, y1, colour=g1), d1
 
 # Colour Aust
@@ -364,3 +385,77 @@ worldmap + geom_polygon(data = subset(worldmap.cp, region == "Australia",
 
 plot(worldmap)
 dev.off()
+
+##############################################################################
+# find the followers
+#################################################################################
+
+DF_follow_DA <- followers$screenName
+DF_friends_DA <- following$screenName
+
+#loop for follows, write out files
+for (i in 1:length(DF_follow_DA)) {
+  
+  if (i==1) {res_df <- data.frame(txt_nam = character(),
+                                  cnt_follow = numeric(),
+                                 cnt_friend = numeric())}
+    
+  x_txt <- DF_follow_DA[i]
+  x_FO <- getUser(DF_follow_DA[i])$followersCount
+  x_FR <- getUser(DF_follow_DA[i])$friendsCount
+  
+  x_df <- as.data.frame(cbind(txt_nam = x_txt, cnt_follow =x_FO, cnt_friend =x_FR))
+  res_df <- rbind(res_df, x_df)
+  
+  if(i==length(DF_follow_DA)) {  
+    # add in ANZ flag
+    res_df <- cbind(res_df, ANZ=grepl('anz', followers$description, ignore.case=TRUE))
+    # addin DA
+    DA_txt <- getUser(userName)$screenName
+    DA_FO <- getUser(userName)$followersCount
+    DA_FR <- getUser(userName)$friendsCount
+    res_df <- rbind(res_df, as.data.frame(cbind(txt_nam = DA_txt, 
+                                                cnt_follow = DA_FO, 
+                                                cnt_friend = DA_FR, ANZ="ZDA")))
+    
+    # save file
+    write.table(res_df, file=paste0("./Networks/followers_", userName, substr(date(),0,10), ".txt"), 
+                      sep=",", row.names = FALSE)
+    print("job done") }
+
+  print(paste("end ", i))
+}
+
+## UPD this for the new logic
+#loop for follows, write out files
+for (i in 1:length(DF_friends_DA)) {
+  
+  if (i==1) {res_df <- data.frame(txt_nam = character(),
+                                  cnt_follow = numeric(),
+                                  cnt_friend = numeric())}
+  
+  x_txt <- DF_friends_DA[i]
+  x_FO <- getUser(DF_friends_DA[i])$followersCount
+  x_FR <- getUser(DF_friends_DA[i])$friendsCount
+  
+  x_df <- as.data.frame(cbind(txt_nam = x_txt, cnt_follow =x_FO, cnt_friend =x_FR))
+  res_df <- rbind(res_df, x_df)
+  
+  if(i==length(DF_friends_DA)) {  
+    # add in ANZ flag
+    res_df <- cbind(res_df, ANZ=grepl('anz', following$description, ignore.case=TRUE))
+    # addin DA
+    DA_txt <- getUser(userName)$screenName
+    DA_FO <- getUser(userName)$followersCount
+    DA_FR <- getUser(userName)$friendsCount
+    res_df <- rbind(res_df, as.data.frame(cbind(txt_nam = DA_txt, 
+                                                cnt_follow = DA_FO, 
+                                                cnt_friend = DA_FR, ANZ="ZDA")))
+    
+    # save file
+    write.table(res_df, file=paste0("./Networks/friends_", userName, substr(date(),0,10), ".txt"), 
+                sep=",", row.names = FALSE)
+    print("job done") }
+  
+  print(paste("end ", i))
+}

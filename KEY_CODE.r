@@ -112,6 +112,9 @@ labCol <- seq(0, 100, 1)
 # replace all with NA, except mutliples of 5
 labCol[labCol %% 5 != 0] <- NA
 
+#drop a factor in DF to numeric without losing accuracy
+res_df$cnt_friend <- as.numeric(levels(res_df$cnt_friend))[res_df$cnt_friend]
+
 #==============================================================================
 #table function
 #basic summary table, 2 dim with count of obs

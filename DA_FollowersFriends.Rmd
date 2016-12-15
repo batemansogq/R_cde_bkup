@@ -1,0 +1,303 @@
+---
+title: "Darren's Friends & Followers"
+author: "S.Mckinnon"
+date: "December 2016"
+output: html_document
+---
+
+### *Background*  
+
+_"From: Abbruzzese, Darren 
+Sent: Tuesday, 8 November 2016 12:09 PM
+To: "Technology Data - All"
+Subject: Speedy comms - CIO changes
+ 
+Hi team,
+ 
+I've been getting into Twitter lately, and find it a great way to follow people and topics around finance and technology that I'm interested in (not to mention some crazy dashcam driving videos and the like!).  I retweet stuff I find interesting which you can check out @abbruzzd.  Anyhow, I thought I'd inject some tweet-like comms into our team comms (without the 140 character limit).  I actually quite like sharing what's on my mind, and hearing what's on others', but I sometimes let other things get in the way and I don't end up emailing out.  So to change that I'm going to give 'speedy comms' a go - and I encourage others to do it as well.  I'll be using this to get quick updates/messages/FYIs/etc out to you all.  Honest, unfiltered, raw.  Probably a spelling mistake or two as well.  Feel free to do the same! If you like it, or don't like it, let me know.  It's a trial .. we'll see how it goes."_ - [Twitter](https://twitter.com/search?src=typd&q=%40abbruzzd&lang=en)
+
+OK...   
+   
+My intention was to do a sentiment analysis, but with Darren producing around a tweet a day and the TwitteR api restriction on how much can be [recovered](https://support.twitter.com/articles/15364) this meant I was waiting for a history to build up, before having a meaningful dataset to analyse.  
+
+So in the meantime, I thought I would look at friends and [followers](https://www.lifewire.com/a-guide-to-followers-on-twitter-2655405) to get a sense of structure and influence within the [twitterverse](https://www.techopedia.com/definition/29186/twitterverse)     
+   
+   
+### *Data Processing*   
+
+The first step is to create a twitter account and then create an app to enable [scrapping](https://www.r-bloggers.com/how-to-use-r-to-scrape-tweets-super-tuesday-2016/).   
+
+To do this work there are a couple of key packages;    
+[twitteR](https://cran.r-project.org/web/packages/twitteR/README.html) & [ROAuth](http://data-mining.business-intelligence.uoc.edu/home/data-from-twitter/r-oauth-for-twitter)
+ 
+Instead of going over this, I will just load from a file 
+
+```{r, echo=FALSE, messages=FALSE, warning=FALSE}
+  fol_txt <- read.csv2("E://R/Twitter/Networks/DA_followers.txt", 
+                       sep=",", na.strings = "NA", stringsAsFactors=FALSE)
+
+  frd_txt <- read.csv2("E://R/Twitter/Networks/DA_friends.txt", 
+                       sep=",", na.strings = "NA", stringsAsFactors=FALSE)
+
+```
+
+Next we need packages to support the analysis. To do the text wrangling we have a couple of key packages;    [Stringr](https://cran.r-project.org/web/packages/stringr/vignettes/stringr.html) & [dplyr](https://cran.rstudio.com/web/packages/dplyr/vignettes/introduction.html) packages are used.  
+
+Then to graph the data;    [ggplot2](http://ggplot2.org/) & [ggrepel](https://cran.r-project.org/web/packages/ggrepel/vignettes/ggrepel.html) 
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+library(stringr)
+library(dplyr)
+library(ggplot2)
+library(ggrepel)
+
+```
+
+With the data loaded, what does it look like?  
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+ggplot(data=fol_txt, aes(x=cnt_follow, y=cnt_friend)) + 
+    ggtitle("Twitter's Darren is following") +
+    xlab("Followers") +
+    ylab("Friends") +
+   geom_point(aes(shape=ANZ, colour=ANZ)) + 
+    geom_text_repel( data=filter(fol_txt, (cnt_follow>=100000 | cnt_friend >= 100000)),
+                     aes(
+                      color = factor(ANZ),
+                       label = txt_nam
+                     ),
+                     point.padding = unit(0.25, "lines"),
+                     box.padding = unit(0.25, "lines"),
+                     nudge_y = 0.1
+    ) +
+    theme(
+      legend.position = "none",
+      axis.title.x = element_text(colour = "grey40"),
+      axis.title.y = element_text(colour = "grey40"),
+      plot.title = element_text(colour = "grey40")
+    )
+
+```
+
+   
+With such outliers in the data, its hard to understand where Darren falls in all this. So I decided to scale and remove the outliers.    
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+  # scale the data  
+  z <- scale(fol_txt[,2:3])
+  
+  #est a spread based upon the scaled mean
+  score <- apply(z, 1, mean)
+  
+  # classify the data based upon spread
+  y <- quantile(score, c(.8,.6,.4,.2))
+  fol_txt$Q[score >=y[1]] <- "A"
+  fol_txt$Q[score < y[1] & score >= y[2]] <- "B"
+  fol_txt$Q[score <y[2] & score >= y[3]] <- "C"
+  fol_txt$Q[score < y[3] & score >= y[4]] <- "D"
+  fol_txt$Q[score < y[4]] <- "E"
+  
+  #subset the data, removing the top and bottom classifications
+  sub_fol_txt <- subset(fol_txt, Q %in% c("B", "C", "D"))
+  
+  #update titles used in the graph
+  sub_fol_txt$lab <- ifelse(sub_fol_txt$cnt_friend>=2000, sub_fol_txt$txt_nam, 
+                            (ifelse(sub_fol_txt$cnt_follow>=2000, sub_fol_txt$txt_nam, 
+                                    (ifelse(sub_fol_txt$txt_nam=="abbruzzd","abbruzzd", ""))))) 
+  
+```
+   
+Now with a limited dataset, we can revisit the graph   
+
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+ ggplot(data=sub_fol_txt, aes(x=cnt_follow, y=cnt_friend)) + 
+    ggtitle("Limited View") +
+    xlab("Followers") +
+    ylab("Friends") +
+    geom_point(aes(shape=ANZ, colour=ANZ)) + 
+    scale_y_continuous(limits = c(0, 3000)) +
+    scale_x_continuous(limits = c(0, 3000)) +
+    geom_text_repel( data=filter(sub_fol_txt, !is.na(lab)),
+      aes(
+        color = factor(ANZ),
+        label = lab
+      ),
+      point.padding = unit(0.25, "lines"),
+      box.padding = unit(0.25, "lines"),
+      nudge_y = 0.1
+    ) +
+    theme(
+      legend.position = "none",
+      axis.title.x = element_text(colour = "grey40"),
+      axis.title.y = element_text(colour = "grey40"),
+      plot.title = element_text(colour = "grey40")
+    )
+ 
+
+```
+   
+While this is a better view, even with these adjustments Darren still struggles to stand out.    
+
+Prehaps its an ANZ thing? I decided to limit the dataset to just people who self-identifed in their description as ANZ.  
+For context I added a liner regression to get a sense of context.       
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+#subset to just ANZ
+  ANZ_fol_txt <- subset(fol_txt, (ANZ==TRUE | txt_nam=="abbruzzd"))
+  ANZ_fol_txt$lab <- ifelse(ANZ_fol_txt$cnt_friend>=1500, ANZ_fol_txt$txt_nam, 
+                            (ifelse(ANZ_fol_txt$cnt_follow>=1500, ANZ_fol_txt$txt_nam, 
+                                    (ifelse(ANZ_fol_txt$txt_nam=="abbruzzd","abbruzzd", ""))))) 
+  
+  #ANZ view
+  ggplot(data=ANZ_fol_txt, aes(x=cnt_follow, y=cnt_friend)) + 
+    ggtitle("Just ANZ") +
+    xlab("Followers") +
+    ylab("Friends") +
+    geom_point(aes(shape=ANZ, colour=ANZ)) + 
+    geom_smooth(method='lm') +
+    geom_text_repel( data=filter(ANZ_fol_txt, !is.na(lab)),
+                     aes(
+                       color = factor(ANZ),
+                       label = lab
+                     ),
+                     point.padding = unit(0.25, "lines"),
+                     box.padding = unit(0.25, "lines"),
+                     nudge_y = 0.1
+    ) +
+    theme(
+      legend.position = "none",
+      axis.title.x = element_text(colour = "grey40"),
+      axis.title.y = element_text(colour = "grey40"),
+      plot.title = element_text(colour = "grey40")
+    )
+
+```
+  
+Ok, prehaps the story is different for Darren's Friends?   
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+
+  ggplot(data=frd_txt, aes(x=cnt_follow, y=cnt_friend)) + 
+    ggtitle("Darren's Twitter friends") +
+    xlab("Followers") +
+    ylab("Friends") +
+    geom_point(aes(shape=ANZ, colour=ANZ)) + 
+    geom_text_repel( data=filter(frd_txt, (cnt_follow>=2500000 | cnt_friend >= 20000)),
+                     aes(
+                        color = factor(ANZ),
+                       label = txt_nam
+                     ),
+                     point.padding = unit(0.25, "lines"),
+                     box.padding = unit(0.25, "lines"),
+                     nudge_y = 0.1
+    ) +
+    theme(
+      legend.position = "none",
+      axis.title.x = element_text(colour = "grey40"),
+      axis.title.y = element_text(colour = "grey40"),
+      plot.title = element_text(colour = "grey40")
+    )
+
+```
+
+As before outliers obscure understanding, scaling will help again.      
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+  z <- scale(frd_txt[,2:3])
+  score <- apply(z, 1, mean)
+  
+  y <- quantile(score, c(.8,.6,.4,.2))
+  frd_txt$Q[score >=y[1]] <- "A"
+  frd_txt$Q[score < y[1] & score >= y[2]] <- "B"
+  frd_txt$Q[score <y[2] & score >= y[3]] <- "C"
+  frd_txt$Q[score < y[3] & score >= y[4]] <- "D"
+  frd_txt$Q[score < y[4]] <- "E"
+  
+  sub_frd_txt <- subset(frd_txt, Q %in% c("B", "C", "D"))
+  
+  #update titles
+  sub_frd_txt$lab <- ifelse(sub_frd_txt$cnt_friend>=2000, sub_frd_txt$txt_nam, 
+                            (ifelse(sub_frd_txt$cnt_follow>=2000, sub_frd_txt$txt_nam, 
+                                    (ifelse(sub_frd_txt$txt_nam=="abbruzzd","abbruzzd", ""))))) 
+  
+  #limited view
+  ggplot(data=sub_frd_txt, aes(x=cnt_follow, y=cnt_friend)) + 
+    ggtitle("Limited View") +
+    xlab("Followers") +
+    ylab("Friends") +
+    geom_point(aes(shape=ANZ, colour=ANZ)) + 
+    scale_y_continuous(limits = c(0, 3000)) +
+    scale_x_continuous(limits = c(0, 3000)) +
+    geom_text_repel( data=filter(sub_frd_txt, !is.na(lab)),
+                     aes(
+                       color = factor(ANZ),
+                       label = lab
+                     ),
+                     point.padding = unit(0.25, "lines"),
+                     box.padding = unit(0.25, "lines"),
+                     nudge_y = 0.1
+    ) +
+    theme(
+      legend.position = "none",
+      axis.title.x = element_text(colour = "grey40"),
+      axis.title.y = element_text(colour = "grey40"),
+      plot.title = element_text(colour = "grey40")
+    )
+
+```
+
+Once again, lets try just the ANZ accounts, with a liner regression to help understand the baseline;   
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+  #subset for ANZ
+  ANZ_frd_txt <- subset(frd_txt, (ANZ==TRUE | txt_nam=="abbruzzd"))
+  ANZ_frd_txt$lab <- ifelse(ANZ_frd_txt$cnt_friend>=1500, ANZ_frd_txt$txt_nam, 
+                            (ifelse(ANZ_frd_txt$cnt_follow>=1500, ANZ_frd_txt$txt_nam, 
+                                    (ifelse(ANZ_frd_txt$txt_nam=="abbruzzd","abbruzzd", ""))))) 
+  
+  #ANZ view
+  ggplot(data=ANZ_frd_txt, aes(x=cnt_follow, y=cnt_friend)) + 
+    ggtitle("Just ANZ") +
+    xlab("Followers") +
+    ylab("Friends") +
+    geom_point(aes(shape=ANZ, colour=ANZ)) + 
+    geom_smooth(method='lm') +
+    geom_text_repel( data=filter(ANZ_frd_txt, !is.na(lab)),
+                     aes(
+                       color = factor(ANZ),
+                       label = lab
+                     ),
+                     point.padding = unit(0.25, "lines"),
+                     box.padding = unit(0.25, "lines"),
+                     nudge_y = 0.1
+    ) +
+    theme(
+      legend.position = "none",
+      axis.title.x = element_text(colour = "grey40"),
+      axis.title.y = element_text(colour = "grey40"),
+      plot.title = element_text(colour = "grey40")
+    )
+  
+```
+
+
+#### *Conclusion*
+
+Prehaps the Microsoft API for [Emotion](https://www.microsoft.com/cognitive-services/en-us/emotion-api) using Darrens Twitter photo best expresses this analysis.
+
+![](E:\R\Twitter\MS_Darren_sentiment.png)
+
+
+
+#### *Notes*
+The Key notes of this analysis are:  
+
+- it should be noted, these stats change on a daliy basis. Different days will get different results. 
+
+- The original idea for this is [Jeff's Leaks](http://biostat.jhsph.edu/~jleek/code/twitterMap.R)
+
+- The MS API Inspiration follows from [here](https://www.r-bloggers.com/election-2016-tracking-emotions-with-r-and-python/)  
+
+
+**-- end of document --**
