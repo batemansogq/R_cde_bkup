@@ -18,20 +18,47 @@ library(reshape2)
 #graph labels
 library(ggrepel)
 
+#use the unqinue tweet set
+tw_df <- unq_text_df 
 
-tw_df <- tweets_UT_df 
+tw_df$create_dt <- ymd(substr(tw_df$created,0,10))
 
-ggplot(data=tw_df, aes(x=created)) +
-  geom_histogram(alpha=0.6, na.rm = FALSE) + 
-  ggtitle(paste(userName," tweet activity",sep="")) 
+#for the graph
+#work out mean tweets
+tw_mean <- round(mean(table(tw_df$create_dt), na.rm=TRUE),2)
+# find the max date for the mean label
+tw_max <- max(tw_df$create_dt, na.rm=TRUE) - 5
+
+#make a histogram based on create date
+ggplot(data=tw_df, aes(x=create_dt)) +
+  geom_histogram(colour="grey32", fill=cols[2], alpha=0.6, na.rm = FALSE) +
+  xlab("Tweet Created Date") +
+  ylab("Tweet Count") +
+  #addin the mean line
+  geom_hline(aes(yintercept=tw_mean),
+             color=cols[1], linetype="dashed", size=1, show.legend = FALSE) +
+  #addin the mean label
+  geom_text(aes(tw_max, (tw_mean+0.3) , label=tw_mean, colour=cols[1])) +
+  #config the title
+  ggtitle(paste(userName," tweet activity since ",
+                min(tw_df$create_dt, na.rm=TRUE), sep="")) +
+  #remove the legend, change the colour of the titles and centre the main
+  theme(legend.position = "none",
+        axis.title.x = element_text(colour = "grey32"),
+        axis.title.y = element_text(colour = "grey32"),
+        plot.title = element_text(colour = "grey32", hjust=0.5))
 
 # clean up the text
 reg <- "([^A-Za-z_\\d#@']|'(?![A-Za-z_\\d#@]))"
 tidy_df <- tw_df %>% select(text) %>%
-  mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|http://[A-Za-z\\d]+|&amp;|&lt;|&gt;|RT", "")) %>%
+  mutate(text = str_replace_all(text, 
+                                #remove URLs, user & topic references
+                                "https://t.co/[A-Za-z\\d]+|http://[A-Za-z\\d]+|&amp;|&lt;|&gt;|RT+|#[A-Za-z]*+|@[A-Za-z_]*",
+                                "")) %>%
   unnest_tokens(word, text, token = "regex", pattern = reg) %>%
   filter(!word %in% stop_words$word,
          str_detect(word, "[a-z]"))
+
 
 tot = nrow(tidy_df)
 
@@ -46,8 +73,31 @@ ggplot(data=frequency[1:20,], aes( reorder(tidy_df, ratio), ratio)) +
   geom_bar(alpha = 0.8, stat = "identity", show.legend = FALSE) +
   coord_flip()
 
+##############################################
+#sentiment
+###################################################
 
-  #sentiment
+word.list = str_split(tw_df$text, '\\s+') 
+new_list <- unlist(word.list)
+#all the people
+ls_people <- new_list[grep("@[A-Za-z_]*", new_list)]
+#make unique
+ls_people <- unique(unlist(ls_people, use.names = FALSE))
+#find how many times mentioned
+ls_cnt_people <- lapply(ls_people, function (x) sum(str_count(tw_df$text,x)))
+#combine people with counts
+people_df <- as.data.frame(cbind(ls_people, ls_cnt_people))
+
+#all the topics
+ls_topics <- new_list[grep("#[A-Za-z]*", new_list)]
+ls_topics <- unique(unlist(ls_topics, use.names = FALSE))
+ls_cnt_topics <- lapply(ls_topics, function (x) sum(str_count(tw_df$text,x)))
+topics_df <- as.data.frame(cbind(ls_topics, ls_cnt_topics))
+
+##############################################
+#sentiment
+###################################################
+
   sentiment_nrc <- tidy_df %>%
     inner_join(get_sentiments("nrc")) 
   
@@ -93,6 +143,48 @@ ggplot(data=frequency[1:20,], aes( reorder(tidy_df, ratio), ratio)) +
           axis.title.x = element_blank(),
           axis.title.y = element_blank())
   
+  ###############################################
+  # http://tidytextmining.com/sentiment.html - cloloured word/sent
+  ################################################
+  
+  tidy_cnt_df <- as.data.frame(transform(table(tidy_df$word)))
+  colnames(tidy_cnt_df)[1] <- "word"
+  
+  tidy_cnt_df  %>%
+    inner_join(get_sentiments("bing")) %>%
+    acast(word ~ sentiment, value.var = "Freq", fill = 0) %>%
+    comparison.cloud(colors = c(cols[1], cols[2]),
+                     max.words = 50)
+  
+  
+  
+  #sentiment
+  sent_cnt_nrc <- tidy_cnt_df %>%
+    inner_join(get_sentiments("nrc"), c("word"="word")) %>% select(-1)
+  
+  #graphs
+  grh_cnt_nrc <- as.data.frame(table(sent_cnt_nrc))
+  levels(grh_cnt_nrc$sentiment)<-c("negative","anger", "disgust", "fear", 
+                          "sadness",  "positive","joy", "anticipation",
+                          "surprise", "trust")
+  
+  #update the freq for the legend text
+  colnames(grh_cnt_nrc)[1] = "Word_Freq"
+  
+  ggplot(data=grh_cnt_nrc[which(grh_cnt_nrc$Freq.1>0),], 
+         aes(x=sentiment, y=Freq.1, 
+                               group = Word_Freq, 
+                               colour = Word_Freq)) +
+    geom_line() +
+    geom_point( size=2, shape=21) +
+    ggtitle("Frequency of Words used vs Sentiment(NRC)") + 
+    theme(axis.text.x = element_text(angle = 60, hjust = 1),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(), 
+          plot.title = element_text(colour = "grey32", hjust=0.5),
+          legend.title = element_text(colour = "grey32"))
+  
+
   
   #####################################################
   # followers charts

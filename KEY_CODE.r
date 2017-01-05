@@ -57,6 +57,16 @@ t1 <- read.csv(url, header=TRUE, sep=",", na.strings = c('','NA','#DIV/0!'))
 	    write.csv(sou_dat, file=nam, row.names = FALSE)
 	  }
 
+	  #find the created date of the file
+		ls_fl_dt <- file.info(list.files("E://R/Twitter/Tweets"))$mtime
+		ls_fl_dt <- substr(ls_fl_dt,0,10)
+
+		#make the data frame
+		ls_df <- as.data.frame(cbind(ls_fl, ls_fl_dt))
+		#arrange the df according to date - need lubidate ymd()
+		ls_df <- ls_df %>% mutate(dt=ymd(ls_fl_dt)) %>% arrange(desc(dt))
+	  
+	  
 ###########################################################################################
 # data manipulation
 ########################################################################################### 
@@ -201,6 +211,8 @@ sort(tapply(is.na(CPS$MetroAreaCode), CPS$State, mean))
 	  ungroup() %>%
 	  select(-31, -33,-34, -36,-37, -39)
 	
+	#arrange the df according to date - need lubidate ymd()
+		ls_df <- ls_df %>% mutate(dt=ymd(ls_fl_dt)) %>% arrange(desc(dt))
 	
 	# use zoo for rolling sum of previous period
 	df_frm <- df_away %>% 
@@ -219,7 +231,7 @@ sort(tapply(is.na(CPS$MetroAreaCode), CPS$State, mean))
 	mdat <- matrix(round(rnorm(20),3), nrow = 4, ncol = 5, byrow = TRUE,
 	               dimnames = list(c("r1", "r2", "r3", "r4"),
 	                               c("C1", "C2", "C3", "c4", "c5")))
-# seek the diag
+# find the diagania across the matrix
 	diag(mdat)
 	
 #subset a data frame and stop the conversion
