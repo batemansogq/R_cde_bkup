@@ -1,0 +1,2 @@
+"text","favorited","favoriteCount","replyToSN","created","truncated","replyToSID","id","replyToUID","statusSource","screenName","retweetCount","isRetweet","retweeted","longitude","latitude"
+"@abbruzzd Hi Darren, I'm glad to hear Christopher was able to help you out! I'll pass your thanks on to the team :) - Emma",FALSE,0,"abbruzzd",2017-01-06 22:50:35,FALSE,"816978883538866177","817503659252740096","254944722","<a href=\"http://www.radian6.com\" rel=\"nofollow\">Radian6 -Social Media Management</a>","JetstarAirways",0,FALSE,FALSE,NA,NA

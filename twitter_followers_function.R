@@ -419,7 +419,7 @@ for (i in 1:length(DF_follow_DA)) {
                                                 cnt_friend = DA_FR, ANZ="ZDA")))
     
     # save file
-    write.table(res_df, file=paste0("./Networks/followers_", userName, substr(date(),0,10), ".txt"), 
+    write.table(res_df, file=paste0("./Networks/followers_", userName, substr(now(),0,10), ".txt"), 
                       sep=",", row.names = FALSE)
     print("job done") }
 
@@ -453,7 +453,7 @@ for (i in 1:length(DF_friends_DA)) {
                                                 cnt_friend = DA_FR, ANZ="ZDA")))
     
     # save file
-    write.table(res_df, file=paste0("./Networks/friends_", userName, substr(date(),0,10), ".txt"), 
+    write.table(res_df, file=paste0("./Networks/friends_", userName, substr(now(),0,10), ".txt"), 
                 sep=",", row.names = FALSE)
     print("job done") }
   

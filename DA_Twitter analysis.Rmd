@@ -1,0 +1,391 @@
+---
+title: "Twitter Analysis - Darren Abbruzzese"
+author: "S.Mckinnon"
+date: "Jan 2017"
+output: html_document
+---
+
+### *Synopsis*
+
+This is an Text Analysis of [Darren Abbruzzese](https://twitter.com/search?src=typd&q=abbruzzd&lang=en) twitter account activity covering the period Nov 2016 - Jan 2017 using [Rmarkdown](http://rmarkdown.rstudio.com/). 
+
+It investigates activity, what has been popular within the community, a sentiment analysis of content and finally a facial expression analysis. 
+
+While some interesting points are uncovered it should noted that the current data set is probably to limited to draw any strong conclusions.   
+
+### *Background*  
+
+From: Abbruzzese, Darren     
+Sent: Tuesday, 8 November 2016 12:09 PM    
+To: "Technology Data - All
+Subject: Speedy comms - CIO changes   
+ 
+Hi team,
+ 
+I've been getting into [Twitter](https://twitter.com/search?src=typd&q=%40abbruzzd&lang=en) lately...I re-tweet stuff I find interesting which you can check out ['@abbruzzd'](https://twitter.com/search?src=typd&q=abbruzzd&lang=en).... It's a trial .. we'll see how it goes." 
+
+**_OK..._** I had been studying [R](https://www.coursera.org/specializations/jhu-data-science) for a while, this looked like a good opportunity for a practical case study.      
+ 
+
+### *Packages Used*
+
+To do the Data wrangling we have a few key packages; [Stringr](https://cran.r-project.org/web/packages/stringr/vignettes/stringr.html), [reshape2](https://cran.r-project.org/web/packages/reshape2/reshape2.pdf) & [dplyr](https://cran.rstudio.com/web/packages/dplyr/vignettes/introduction.html). We are also dealing with dates/time stamps so [lubridate](https://cran.r-project.org/web/packages/lubridate/lubridate.pdf) will also help.    
+
+To Graph the data [ggplot2](http://ggplot2.org/) & [RColorBrewer](https://cran.r-project.org/web/packages/RColorBrewer/RColorBrewer.pdf) will be key. I will also be using [pander](http://rapporter.github.io/pander/) to help with some of the table formatting in this document. 
+
+To complete the Text and Sentiment analysis  [tidytext](https://cran.r-project.org/web/packages/tidytext/vignettes/tidytext.html) and [wordcloud](https://cran.r-project.org/web/packages/wordcloud/wordcloud.pdf) is used.
+
+```{r,  echo=TRUE, message=FALSE, warning=FALSE, comment=FALSE}
+library(stringr)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(reshape2)
+library(tidytext)
+library(RColorBrewer)
+library(wordcloud)
+library(pander)
+```
+
+
+#### *Key Points*
+
+There are a couple of house keeping items before we begin:   
+
+ - The R Twitter [API](https://cran.r-project.org/web/packages/twitteR/twitteR.pdf) has restrictions on both [volume](https://dev.twitter.com/rest/public/rate-limiting) and [history](https://support.twitter.com/articles/15364).    
+ 
+ - [Twitter](https://www.lifewire.com/what-exactly-is-twitter-2483331) is reliant on what people type. This includes spelling mistakes, mis-typed [hashtages](https://support.twitter.com/articles/49309) and incorrect locations, etc... This analysis is limited by as such [carbon errors](https://en.wikipedia.org/wiki/User_error).   
+ 
+ - These stats change on a daily basis. Different days will get different results. 
+
+   
+### *Data Processing*   
+
+Thanks to Twitter-API [restrictions](https://support.twitter.com/articles/15364), the first step was to create a Twitter scrapper which could be run, building up the history required for an analysis. 
+
+This required a a Twitter account and then creating an app within the [development platform](https://dev.twitter.com/) to enable scrapping of data.   
+
+```{r, eval=FALSE}
+#load the packages required to connect to Twitter
+library(twitteR)
+library(ROAuth)
+# from your DEV App you will get connection configs 
+api_key <- "replace with your API key"
+api_secret <- "replace with your API secret"
+token <- "replace with your Token key"
+token_secret <- "replace with your token secret"
+
+# Create Twitter Connection
+setup_twitter_oauth(api_key, api_secret, token, token_secret)
+
+# once you have a successful connection
+# return all tweets were @abbruzzd is mentioned
+tweets <- searchTwitter("@abbruzzd", lang="en", since="2014-12-01")
+# transform into a standard data frame for R
+tweets_df <- twListToDF(tweets)
+# return the tweets that appear on @abbruzzd's time line
+tweets_UT=userTimeline('@abbruzzd')
+# transform into a standard data frame for R
+tweets_UT_df <- twListToDF(tweets_UT)
+
+# create a date reference for the file name
+nam1 <- paste0("tweets_time", substr(date(),0,10))
+nam2 <- paste0("tweets_men", substr(date(),0,10))
+
+# save each data frame as a text file locally
+write.table(tweets_UT_df, file=paste0("./", nam1, ".txt"), sep=",", row.names = FALSE)
+write.table(tweets_df, file=paste0("./", nam2, ".txt"), sep=",", row.names = FALSE)
+
+```
+
+The Key part of this process is the following message;   
+
+*<span style="color:darkblue"> setup_twitter_oauth(api_key, api_secret, token, token_secret)</span>*   
+**<span style="color:green">[1] "Using direct authentication"</span>**   
+
+This message lets you know you have successfully connected to [Twitter's API](https://dev.twitter.com/docs)   
+
+For obvious reasons, this analysis will just load from files created by this scrapper. 
+
+```{r, echo=FALSE, messages=FALSE, warning=FALSE}
+#reference data
+  Con_CSV <- read.csv2("E://R/Twitter/MKDWN/Locations_Conts.csv", header=FALSE, 
+                     sep=",", na.strings = "NA", stringsAsFactors=FALSE)
+  #drop join col to lower
+  Con_CSV$V1 <- tolower(Con_CSV$V1)
+
+# uniqnue tweet set
+  unq_text_df <- read.csv2("E://R/Twitter/MKDWN/unq_text_df.txt" , sep=",", 
+                             stringsAsFactors = FALSE, header=TRUE)
+# set references
+  userName = "@abbruzzd"
+```
+
+### *Analyzing the Content* 
+
+The main issue is the [sparsity](http://www.dictionary.com/browse/sparsity) of the the data, Darren just isn't very activity on twitter.     
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, comment=''}   
+#get the uniqnue tweet set
+tw_df <- unq_text_df 
+pandoc.table(paste("Since", min(tw_df$created, na.rm=TRUE), userName , "has tweeted" , nrow(tw_df), "times."), split.cells = c(60))
+```
+
+Let have a look at the frequency of activity.  
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}   
+# Set up the graphing colors, replacing the defaults
+  cols = brewer.pal(8,"Set1")
+  cols=cols[-7]
+
+# define the create date for the graph
+tw_df$create_dt <- ymd(substr(tw_df$created,0,10))
+#work out the overall mean for tweeting
+tw_mean <- round(mean(table(tw_df$create_dt), na.rm=TRUE),2)
+# find the max date for the mean label, no bar overlap
+tw_max <- max(tw_df$create_dt, na.rm=TRUE) - 3
+# create the histogram graph
+ggplot(data=tw_df, aes(x=create_dt)) +
+  # reformat the colours
+  geom_histogram(colour="grey32", fill=cols[2], alpha=0.6, na.rm = FALSE) +
+  xlab("Tweet Created Date") +
+  ylab("Tweet Count") +
+  #addin the mean line
+  geom_hline(aes(yintercept=tw_mean),
+             color=cols[1], linetype="dashed", size=1, show.legend = FALSE) +
+  #addin the mean label
+  geom_text(aes(tw_max, (tw_mean+0.3) , label=tw_mean, colour=cols[1])) +
+  #config the title
+  ggtitle(paste(userName," tweet activity since ",
+                min(tw_df$create_dt, na.rm=TRUE), sep="")) +
+  #remove the legend, change the colour of the titles and centre the main
+  theme(legend.position = "none",
+        axis.title.x = element_text(colour = "grey32"),
+        axis.title.y = element_text(colour = "grey32"),
+        plot.title = element_text(colour = "grey32", hjust=0.5))
+
+```
+
+   
+From this limited data set, what are the most [liked](https://support.twitter.com/articles/20169874) tweets?     
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE} 
+#clean up the text
+fav_cnt <- subset(unq_text_df, favoriteCount!="FALSE")
+fav_cnt$favoriteCount <- as.numeric(fav_cnt$favoriteCount)
+#graph the details
+ggplot(data=fav_cnt, aes(x=favoriteCount)) +
+  geom_histogram(colour="grey32", fill=cols[2], alpha=0.6, na.rm = FALSE) +
+  ggtitle("Times a Tweet has been Favored") +
+  ylab("Tweet Count") +
+  xlab("Favored Count") +
+  #remove the legend, change the colour of the titles and centre the main
+  theme(legend.position = "none",
+        axis.title.x = element_text(colour = "grey32"),
+        axis.title.y = element_text(colour = "grey32"),
+        plot.title = element_text(colour = "grey32", hjust=0.5))
+```
+
+The most Favored Tweets are:
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, comment='' } 
+#display the top favorite tweets
+pandoc.table(subset(fav_cnt, favoriteCount>=7) %>% 
+  select(text, "Count"=favoriteCount) %>% 
+  arrange(desc(Count)), style = "grid", split.cells = c(60, 3))
+
+```
+
+Typically Darren's tweets are well received, being liked more often than not. The most popular tweets are ANZ focused with a very strong positive message.    
+
+What the most [re-tweeted](https://support.twitter.com/articles/77606)?     
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE } 
+# remove data errrors
+ret_cnt <- subset(unq_text_df, retweetCount!="abbruzzd")
+# make count column a number
+ret_cnt$retweetCount <- as.numeric(ret_cnt$retweetCount )
+#graph a subset of the data, removing the zero counts
+ggplot(subset(ret_cnt, retweetCount>=1), aes(x=retweetCount)) +
+  geom_histogram(colour="grey32", fill=cols[2], alpha=0.6, na.rm = FALSE) +
+  ggtitle("Tweets that have been Re-tweeted") +
+  ylab("Tweet Count") +
+  xlab("Re-tweet Count") +
+  #remove the legend, change the colour of the titles and centre the main
+  theme(legend.position = "none",
+        axis.title.x = element_text(colour = "grey32"),
+        axis.title.y = element_text(colour = "grey32"),
+        plot.title = element_text(colour = "grey32", hjust=0.5))
+```
+
+The Highest re-tweets are:
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE } 
+#display top retweets
+pandoc.table(subset(ret_cnt, retweetCount>=2) %>% 
+  select(text, "Count"=retweetCount) %>% 
+  arrange(desc(Count)), style = "grid", split.cells = c(60, 3))
+
+
+
+```
+
+Unlike the favored items, Darren's doesn't experience a lot of re-tweet activity. But when it does happen, once again its largely ANZ focused with a very strong positive message.    
+
+
+What Topics are covered by Darren?
+```{r, echo=FALSE, message=FALSE, warning=FALSE, comment='' } 
+word.list = str_split(tw_df$text, '\\s+') 
+new_list <- unlist(word.list)
+
+ls_topics <- new_list[grep("#[A-Za-z]*", new_list)]
+ls_topics <- unique(unlist(ls_topics, use.names = FALSE))
+ls_cnt_topics <- lapply(ls_topics, function (x) sum(str_count(tw_df$text,x)))
+topics_df <- as.data.frame(cbind("Topics"=ls_topics, "Tweet_Count"=ls_cnt_topics))
+
+pandoc.table(head(topics_df %>% 
+                    arrange(desc(as.numeric(Tweet_Count)))),
+             split.cells = c(30, 5))
+
+```
+
+
+Asides from resent Government Education initiative [STEM](http://www.stemaustralia.edu.au/), there doesn't seem to be any topics that regularly appear over this period. 
+
+
+So who is Darren talking too? The Top 10 users referenced in Darren's tweets are;
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, comment='' } 
+#find the people based upon the @
+ls_people <- new_list[grep("@[A-Za-z_]*", new_list)]
+#make the listing unique
+ls_people <- unique(unlist(ls_people, use.names = FALSE))
+#find how many times mentioned
+ls_cnt_people <- lapply(ls_people, function (x) sum(str_count(tw_df$text,x)))
+#combine people with counts
+people_df <- as.data.frame(cbind("People"=ls_people, "Tweet_Count"=ls_cnt_people))
+# sort descending
+people_df <- people_df %>% arrange(desc(as.numeric(Tweet_Count)))
+
+pandoc.table(head(people_df, 10),
+             split.cells = c(45, 5))
+
+```
+
+Rather strangely given the most favored and re-tweeted tweets, only 2 accounts are other [ANZ'ers](https://twitter.com/search?q=%40ANZChristianV%20&src=typd&lang=en).
+
+### *Sentiment Analysis* 
+
+What about the sentiment of what is being tweeted? First we need a clean text to work from.
+
+````{r, echo=TRUE, message=FALSE, warning=FALSE}   
+
+# define the char sets we are looking for
+reg <- "([^A-Za-z_\\d#@']|'(?![A-Za-z_\\d#@]))"
+# clean up the text, replacing URL, Hashtags, User, Topic references & stop words.
+tidy_df <- tw_df %>% select(text) %>%
+  mutate(text = str_replace_all(text, 
+                                #remove URLs, user & topic references
+                                "https://t.co/[A-Za-z\\d]+|http://[A-Za-z\\d]+|&amp;|&lt;|&gt;|RT+|#[A-Za-z]*+|@[A-Za-z_]*",
+                                "")) %>%
+  unnest_tokens(word, text, token = "regex", pattern = reg) %>%
+  filter(!word %in% stop_words$word,
+         str_detect(word, "[a-z]"))
+```
+
+````{r, echo=FALSE, message=FALSE, warning=FALSE, comment=''} 
+pandoc.table(paste("This provides a word count of", nrow(distinct(tidy_df)), "to work with."), split.cells = c(60))
+
+```
+
+Once again the limited data set isn't helping, but we can at least start doing some Sentiment analysis.   
+
+Although it should be noted;  
+ * As discussed by the [tidytext](https://cran.r-project.org/web/packages/tidytext/vignettes/tidytext.html) package author [Julia Silge](http://tidytextmining.com/sentiment.html) this sentiment analysis is based on word matching which is then classified and scored. As such it loses much of the nuance of communication, especially when it comes to irony or sarcasm.    
+ * These methods are based upon central lexicons, [bing](https://www.cs.uic.edu/~liub/FBS/sentiment-analysis.html) and [nrc](http://saifmohammad.com/WebPages/NRC-Emotion-Lexicon.htm) which ignore Australia colloquialisms and slang usage. 
+
+With that in mind, lets have a looking using [bing](https://www.cs.uic.edu/~liub/FBS/sentiment-analysis.html).    
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE } 
+# match the word listing to the bing sentiment listing 
+sentiment_bing <- tidy_df %>%
+    inner_join(get_sentiments("bing")) 
+# make a data frame for graphing
+  grh_bing <- as.data.frame(table(sentiment_bing$sentiment))
+# graph it as bar chart  
+  ggplot(data = grh_bing , aes(x = Var1, y = Freq)) +
+    geom_bar(aes(fill = Var1), stat = "identity") +
+    theme(legend.position = "none") +
+    ggtitle("The BING Sentiment Analysis") + 
+    theme(axis.text.x = element_text(angle = 60, hjust = 1),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          plot.title = element_text(colour = "grey32", hjust=0.5))
+  
+```
+
+This presents Darren's tweet stream as positive, which is nice.
+
+This Analysis can be further expanding in a word cloud, displaying the strongest words classified by their sentiment.
+```{r, echo=FALSE, message=FALSE, warning=FALSE } 
+# make a word data frame
+  tidy_cnt_df <- as.data.frame(transform(table(tidy_df$word)))
+  colnames(tidy_cnt_df)[1] <- "word"
+# create the word cloud, grouping & coloring by sentiment  
+  tidy_cnt_df  %>%
+    inner_join(get_sentiments("bing")) %>%
+    acast(word ~ sentiment, value.var = "Freq", fill = 0) %>%
+    comparison.cloud(colors = c(cols[1], cols[2]),
+                     max.words = 30)
+
+```
+
+A Deeper understanding of the sentiment can be provided by [nrc](http://saifmohammad.com/WebPages/NRC-Emotion-Lexicon.htm) which goes beyond *negative vs positive* classification.
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE } 
+# match the word listing to the nrc sentiment listing 
+  sentiment_nrc <- tidy_df %>%
+    inner_join(get_sentiments("nrc"))  
+# est a data frame for graphing and insert levels for the coloring
+  grh_nrc <- as.data.frame(table(sentiment_nrc$sentiment))
+  levels(grh_nrc$Var1)<-c("negative","anger", "disgust", "fear", 
+                          "sadness",  "positive","joy", "anticipation",
+                          "surprise", "trust")
+# another bar chart  
+  ggplot(data = grh_nrc , aes(x = Var1, y = Freq)) +
+    geom_bar(aes(fill = Var1), stat = "identity") +
+    theme(legend.position = "none") +
+    ggtitle("The NRC Sentiment Analysis") + 
+    theme(axis.text.x = element_text(angle = 60, hjust = 1),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          plot.title = element_text(colour = "grey32", hjust=0.5))
+  
+
+```
+
+Based upon this the positive sentiments of Joy and Trust dominate Darren's tweets. 
+
+
+
+#### *Conclusion*
+
+So despite limited activity, Darren's tweets are generally positive and often get liked by his network, especially when focused on ANZ.   
+
+Given this, perhaps the Microsoft facial expression API -  [Emotion](https://www.microsoft.com/cognitive-services/en-us/emotion-api) using Darren's Twitter photo is a little harsh. 
+
+![](E:\R\Twitter\MS_Darren_sentiment.png)
+
+#### *References*
+This Analysis has used a large number of sources, including the forever helpful [Stackoverflow](http://stackoverflow.com/).   
+
+Some of the main references are;   
+ 
+ - The wonderful [Julia Silge](http://juliasilge.com/blog/) and her fabulous [book](http://tidytextmining.com/)
+ 
+ - The Twitter scrapper inspiration comes from [here](https://www.r-bloggers.com/how-to-use-r-to-scrape-tweets-super-tuesday-2016/)
+
+ - The MS API Inspiration follows from [here](https://www.r-bloggers.com/election-2016-tracking-emotions-with-r-and-python/)  
+
+**-- end of document --**

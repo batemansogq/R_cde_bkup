@@ -4,6 +4,8 @@ library(ggplot2)
 
 #show all colour brewer plattes
 display.brewer.all()
+# just one for a limited number of colours
+display.brewer.pal(8, "Set1")
 
 # Create the ggplot object with the data and the aesthetic mapping:
 scatterplot = ggplot(WHO, aes(x = GNI, y = FertilityRate))

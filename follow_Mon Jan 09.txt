@@ -1,0 +1,175 @@
+"followersLocation","lon","lat","dist"
+"16039 sestri levante ge, italia",9.4008281,44.2763654,NA
+"between zagreb  - wien - praha",NA,NA,NA
+"london, uk",-0.1277583,51.5073509,NA
+"zrh | lon | nyc | sin | hkg",NA,NA,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"london, europe",-0.1277583,51.5073509,NA
+"waterloo, ontario canada",-80.5204096,43.4642578,NA
+"",NA,NA,NA
+"sydney, new south wales",151.2092955,-33.8688197,NA
+"new york, ny | paris, france.",NA,NA,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"wellington city, new zealand",174.776236,-41.2864603,NA
+"",NA,NA,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"bengaluru south, karnataka",77.5945627,12.9715987,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"burlington, ontario",-79.7990319,43.3255196,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"san francisco, ca",-122.4194155,37.7749295,NA
+"melbourne, Australia",144.9630576,-37.8136276,NA
+" lakecrystal.futurenet.club",NA,NA,NA
+"california, usa",-119.4179324,36.778261,NA
+"australia",133.775136,-25.274398,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"australia",133.775136,-25.274398,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"australia",133.775136,-25.274398,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"cleveland, oh",-81.6943605,41.49932,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"london, england",-0.1277583,51.5073509,NA
+"twitter",NA,NA,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"iphone: 0.000000,0.000000",NA,NA,NA
+"london",-0.1277583,51.5073509,NA
+"london",-0.1277583,51.5073509,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"global",NA,NA,NA
+"melbourne, victoria, australia",144.9630576,-37.8136276,NA
+"bengaluru",77.5945627,12.9715987,NA
+"new zealand",174.885971,-40.900557,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"worldwide",NA,NA,NA
+"wellington city, new zealand",174.776236,-41.2864603,NA
+"",NA,NA,NA
+"tulsa, ok",-95.992775,36.1539816,NA
+"sydney, australia",151.2092955,-33.8688197,NA
+"",NA,NA,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"sydney, new south wales",151.2092955,-33.8688197,NA
+"melbourne, victoria (mostly)",NA,NA,NA
+"",NA,NA,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"melbourne, Australia",144.9630576,-37.8136276,NA
+"victoria, australia",144.7851531,-37.4713077,NA
+"melbourne | australia (via uk)",-1.085898,50.80022,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"wellington, new zealand",174.776236,-41.2864603,NA
+"melbourne, Australia",144.9630576,-37.8136276,NA
+"toronto, on canada",-79.3831843,43.653226,NA
+"london, england",-0.1277583,51.5073509,NA
+"",NA,NA,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"new york",-74.0059413,40.7127837,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"melbourne, Australia",144.9630576,-37.8136276,NA
+"melbourne australia",144.9630576,-37.8136276,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"melbourne, Australia",144.9630576,-37.8136276,NA
+"grenada village, wellington",174.8203858,-41.2074503,NA
+"",NA,NA,NA
+"perth, western australia",115.8604572,-31.9505269,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"melbourne, Australia",144.9630576,-37.8136276,NA
+"melbourne, Australia",144.9630576,-37.8136276,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"singapore",103.819836,1.352083,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"australia",133.775136,-25.274398,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"singapore",103.819836,1.352083,NA
+"singapore",103.819836,1.352083,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"london, england",-0.1277583,51.5073509,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"gympie, queensland",152.6657456,-26.1833529,NA
+"",NA,NA,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"europe & middle east",15.2551187,54.5259614,NA
+"",NA,NA,NA
+"melbourne, Australia",144.9630576,-37.8136276,NA
+"boston, ma",-71.0588801,42.3600825,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"melbourne, Australia",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"bangalore",77.5945627,12.9715987,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"asia pacific - based in sydney",NA,NA,NA
+"",NA,NA,NA
+"sydney, australia",151.2092955,-33.8688197,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"sydney, australia",151.2092955,-33.8688197,NA
+"australia and new zealand",149.1357714,-35.3086252,NA
+"melbourne, Australia",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"australia",133.775136,-25.274398,NA
+"docklands, melbourne",144.946,-37.817,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"melbourne, Australia",144.9630576,-37.8136276,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"melbourne, Australia",144.9630576,-37.8136276,NA
+"melbourne australia ",144.9630576,-37.8136276,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"singapore",103.819836,1.352083,NA
+"la",-118.2436849,34.0522342,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"melbourne, Australia",144.9630576,-37.8136276,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"melbourne, Australia",144.9630576,-37.8136276,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"melbourne, victoria",144.9630576,-37.8136276,NA
+"zug, switzerland",8.5154946,47.1661672,NA
+"melbourne, Australia",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"australia",133.775136,-25.274398,NA
+"cambridge, ma usa",-71.1097335,42.3736158,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"melbourne, australia",144.9630576,-37.8136276,NA
+"australia",133.775136,-25.274398,NA
+"casablanca",-7.5898434,33.5731104,NA
+"australia",133.775136,-25.274398,NA
+"",NA,NA,NA

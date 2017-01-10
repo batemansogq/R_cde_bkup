@@ -62,11 +62,22 @@ unq_text_df$te <- substr(unq_text_df$text, 0, 15)
 # remove tweets with no content
 unq_text_df <- subset(unq_text_df, te!="FALSE")
 
+#write out for rmarkdown
+write.table(unq_text_df, file=paste0("E://R/Twitter/MKDWN/unq_text_df.txt"), sep=",", row.names = FALSE)
+############
+
 #reweet cnt
 table(unq_text_df$retweetCount)
+subset(unq_text_df, retweetCount>=2) %>% 
+  filter(retweetCount!="abbruzzd") %>% 
+  select(text, retweetCount) %>% 
+  arrange(desc(retweetCount))
+
 #fav count
-subset(unq_text_df, favoriteCount>=5) %>% 
-  filter(favoriteCount!=FALSE) %>% 
+fav_cnt <- subset(unq_text_df, favoriteCount!="FALSE")
+fav_cnt$favoriteCount <- as.numeric(fav_cnt$favoriteCount)
+table(fav_cnt$favoriteCount)
+subset(fav_cnt, favoriteCount>=7) %>% 
   select(text, favoriteCount) %>% 
   arrange(desc(favoriteCount))
 

@@ -17,6 +17,14 @@ library(scales)
 library(reshape2)
 #graph labels
 library(ggrepel)
+library(wordcloud)
+
+#get data in 
+unq_text_df <- read.csv2("E://R/Twitter/MKDWN/unq_text_df.txt" , sep=",", 
+                         stringsAsFactors = FALSE, header=TRUE)
+
+# set references
+userName = "@abbruzzd"
 
 #use the unqinue tweet set
 tw_df <- unq_text_df 
@@ -60,7 +68,7 @@ tidy_df <- tw_df %>% select(text) %>%
          str_detect(word, "[a-z]"))
 
 
-tot = nrow(tidy_df)
+tot = nrow(distinct(tidy_df))
 
 # find freq of words
 frequency <- as.data.frame(table(tidy_df)) %>%  
@@ -86,13 +94,17 @@ ls_people <- unique(unlist(ls_people, use.names = FALSE))
 #find how many times mentioned
 ls_cnt_people <- lapply(ls_people, function (x) sum(str_count(tw_df$text,x)))
 #combine people with counts
-people_df <- as.data.frame(cbind(ls_people, ls_cnt_people))
+people_df <- as.data.frame(cbind("People"=ls_people, "Tweet_Count"=ls_cnt_people))
+
+people_df <- people_df %>% arrange(desc(as.numeric(Tweet_Count)))
 
 #all the topics
 ls_topics <- new_list[grep("#[A-Za-z]*", new_list)]
 ls_topics <- unique(unlist(ls_topics, use.names = FALSE))
 ls_cnt_topics <- lapply(ls_topics, function (x) sum(str_count(tw_df$text,x)))
 topics_df <- as.data.frame(cbind(ls_topics, ls_cnt_topics))
+
+head(topics_df %>% arrange(desc(as.numeric(ls_cnt_topics))))
 
 ##############################################
 #sentiment
@@ -147,6 +159,10 @@ topics_df <- as.data.frame(cbind(ls_topics, ls_cnt_topics))
   # http://tidytextmining.com/sentiment.html - cloloured word/sent
   ################################################
   
+  # Set up the ploting colors
+  cols = brewer.pal(8,"Set1")
+  cols=cols[-7]
+  
   tidy_cnt_df <- as.data.frame(transform(table(tidy_df$word)))
   colnames(tidy_cnt_df)[1] <- "word"
   
@@ -199,8 +215,7 @@ topics_df <- as.data.frame(cbind(ls_topics, ls_cnt_topics))
   #drop limits for graph
   z <- scale(fol_txt[,2:3])
   
-  #update d
-  
+  #apply a factor to enable trimming of outsiders
   score <- apply(z, 1, mean)
   roster <- cbind(fol_txt, score)
   
@@ -213,10 +228,13 @@ topics_df <- as.data.frame(cbind(ls_topics, ls_cnt_topics))
   
   sub_fol_txt <- subset(fol_txt, Q %in% c("B", "C", "D"))
   
-  #update titles
+  #update titles for outliers
   sub_fol_txt$lab <- ifelse(sub_fol_txt$cnt_friend>=2000, sub_fol_txt$txt_nam, 
                             (ifelse(sub_fol_txt$cnt_follow>=2000, sub_fol_txt$txt_nam, 
                                     (ifelse(sub_fol_txt$txt_nam=="abbruzzd","abbruzzd", ""))))) 
+  
+  #graph labels
+  library(ggrepel)
   
   #limited view
   ggplot(data=sub_fol_txt, aes(x=cnt_follow, y=cnt_friend)) + 
@@ -226,7 +244,6 @@ topics_df <- as.data.frame(cbind(ls_topics, ls_cnt_topics))
     geom_point(aes(shape=ANZ, colour=ANZ)) + 
     scale_y_continuous(limits = c(0, 3000)) +
     scale_x_continuous(limits = c(0, 3000)) +
-  #  geom_smooth(method='lm') +
     geom_text_repel( data=filter(sub_fol_txt, !is.na(lab)),
       aes(
         color = factor(ANZ),
@@ -243,7 +260,7 @@ topics_df <- as.data.frame(cbind(ls_topics, ls_cnt_topics))
       plot.title = element_text(colour = "grey40")
     )
   
-  #update titles
+  #update titles for ANZ, to cover outliers
   ANZ_fol_txt <- subset(fol_txt, (ANZ==TRUE | txt_nam=="abbruzzd"))
   ANZ_fol_txt$lab <- ifelse(ANZ_fol_txt$cnt_friend>=1500, ANZ_fol_txt$txt_nam, 
                             (ifelse(ANZ_fol_txt$cnt_follow>=1500, ANZ_fol_txt$txt_nam, 
@@ -411,6 +428,30 @@ topics_df <- as.data.frame(cbind(ls_topics, ls_cnt_topics))
       plot.title = element_text(colour = "grey40")
     )
   
-  #  geom_text_repel(data=filter(results, padj<0.05), aes(label=Gene))
+  ###########################################
+  # stacked bar chart
+  ################################################
+  
+  # make a quick summary table, flip it
+  df_stacked <-  melt(rbind(table(frd_txt$ANZ), table(fol_txt$ANZ)))
+  # remove ZDA and update Var1
+  df_stacked <- df_stacked %>% filter(Var2!="ZDA") %>% 
+    mutate ("Rel" = ifelse(Var1==1, "Friends", "Followers"),
+                           "Type" = ifelse(Var2=="TRUE", "ANZ", "External")) %>%
+    select(c(-Var1, -Var2))
+  
+  #plot it
+  ggplot(data=df_stacked, aes(x=Rel, y=value, fill=Type)) +
+    geom_bar(position = "fill",stat = "identity") + 
+    scale_y_continuous(labels = percent_format()) +
+    ggtitle("Mix of ANZ Friends vs Followers") +
+    ylab("Accounts")+
+    coord_flip() + 
+    theme(
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      plot.title = element_text(colour = "grey40")
+    )
 
+  
   

@@ -130,6 +130,9 @@ res_df$cnt_friend <- as.numeric(levels(res_df$cnt_friend))[res_df$cnt_friend]
 #basic summary table, 2 dim with count of obs
 table(mvt$Year, mvt$Arrest)
 
+#flip a tables columns and rows - melt
+leg_tab <- melt(table(sou_followers$V2))
+
 #subset table
 table(mvt$Year, mvt$Arrest)[1,2]
 

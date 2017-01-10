@@ -1,0 +1,121 @@
+"followingLocation","lon","lat","dist"
+"London",-0.1277583,51.5073509,NA
+"Suffolk",-76.5835621,36.7282054,NA
+"",NA,NA,NA
+"London",-0.1277583,51.5073509,NA
+"ZRH | LON | NYC | SIN | HKG",NA,NA,NA
+"Salt Lake City, UT",-111.8910474,40.7607793,NA
+"",NA,NA,NA
+"Not Cambridge, UK",NA,NA,NA
+"MSRI",NA,NA,NA
+"Washington, DC",-77.0368707,38.9071923,NA
+"",NA,NA,NA
+"yhojob1gmail.com",NA,NA,NA
+"",NA,NA,NA
+"Global",NA,NA,NA
+"New York, NY",-74.0059413,40.7127837,NA
+"Turn On Notifications!",NA,NA,NA
+"Snapchat : Thediyideas",NA,NA,NA
+"California, USA",-119.4179324,36.778261,NA
+"",NA,NA,NA
+"London UK",-0.1277583,51.5073509,NA
+"",NA,NA,NA
+"London",-0.1277583,51.5073509,NA
+"Wyndham, VA",-77.6124884,37.6984781,NA
+"San Francisco, Chicago",-87.6566377,41.997171,NA
+"Australia",133.775136,-25.274398,NA
+"Melbourne | Australia (via UK)",-1.085898,50.80022,NA
+"New York, NY",-74.0059413,40.7127837,NA
+"",NA,NA,NA
+"New York, NY",-74.0059413,40.7127837,NA
+"New York City",-74.0059413,40.7127837,NA
+"Saturn, Solar System",NA,NA,NA
+"Gale Crater, Mars",NA,NA,NA
+"",NA,NA,NA
+"Mountain View, California",-122.0838511,37.3860517,NA
+"Portland, OR",-122.6764816,45.5230622,NA
+"New York, NY",-74.0059413,40.7127837,NA
+"New York + 30,000 feet",NA,NA,NA
+"Harvard Business School",NA,NA,NA
+"London / Rutland",NA,NA,NA
+"UK | GE | US | CH",NA,NA,NA
+"London, England",-0.1277583,51.5073509,NA
+"London, England",-0.1277583,51.5073509,NA
+"Cyprus",33.429859,35.126413,NA
+"Stamford, CT",-73.5387341,41.0534302,NA
+"Cambridge, MA",-71.1097335,42.3736158,NA
+"Melbourne",144.9630576,-37.8136276,NA
+"ÜT: 51.511924,-0.22414",NA,NA,NA
+"Cleveland, OH",-81.6943605,41.49932,NA
+"San Francisco, CA",-122.4194155,37.7749295,NA
+"New York, NY",-74.0059413,40.7127837,NA
+"New York, NY",-74.0059413,40.7127837,NA
+"Cambridge, MA",-71.1097335,42.3736158,NA
+"Australia",133.775136,-25.274398,NA
+"Australia and New Zealand",149.1357714,-35.3086252,NA
+"",NA,NA,NA
+"Global",NA,NA,NA
+"Melbourne",144.9630576,-37.8136276,NA
+"Global",NA,NA,NA
+"",NA,NA,NA
+"",NA,NA,NA
+"Melbourne",144.9630576,-37.8136276,NA
+"Melbourne",144.9630576,-37.8136276,NA
+"Melbourne, Victoria",144.9630576,-37.8136276,NA
+"Australia (& New Zealand)",133.775136,-25.274398,NA
+"Melbourne",144.9630576,-37.8136276,NA
+"Cupertino",-122.0321823,37.3229978,NA
+"Melbourne, Australia",144.9630576,-37.8136276,NA
+"Melbourne",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"Australia",133.775136,-25.274398,NA
+"Sydney, Australia",151.2092955,-33.8688197,NA
+"Australia",133.775136,-25.274398,NA
+"Melbourne Australia ",144.9630576,-37.8136276,NA
+"Melbourne, Victoria",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"Melbourne, Australia",144.9630576,-37.8136276,NA
+"Melbourne",144.9630576,-37.8136276,NA
+"1 AU",145.2283387,-37.8473468,NA
+"Seattle, WA",-122.3320708,47.6062095,NA
+"",NA,NA,NA
+"Corona, California",-117.5664384,33.8752935,NA
+"New Jersey",-74.4056612,40.0583238,NA
+"Melbourne, Victoria",144.9630576,-37.8136276,NA
+"",NA,NA,NA
+"Melbourne, Australia",144.9630576,-37.8136276,NA
+"Melbourne, Australia ",144.9630576,-37.8136276,NA
+"Melbourne, Australia",144.9630576,-37.8136276,NA
+"Melbourne, Victoria",144.9630576,-37.8136276,NA
+"Melbourne, Australia",144.9630576,-37.8136276,NA
+"Australia",133.775136,-25.274398,NA
+"London, England",-0.1277583,51.5073509,NA
+"New York City",-74.0059413,40.7127837,NA
+"Boston",-71.0588801,42.3600825,NA
+"Sydney, New South Wales",151.2092955,-33.8688197,NA
+"New York",-74.0059413,40.7127837,NA
+"",NA,NA,NA
+"Melbourne, Australia",144.9630576,-37.8136276,NA
+"Zug, Switzerland",8.5154946,47.1661672,NA
+"",NA,NA,NA
+"Sydney, NSW, Australia",151.2092955,-33.8688197,NA
+"Australia",133.775136,-25.274398,NA
+"Cambridge, MA USA",-71.1097335,42.3736158,NA
+"Melbourne",144.9630576,-37.8136276,NA
+"Don't Worry No One Dies.",NA,NA,NA
+"Melbourne, Victoria",144.9630576,-37.8136276,NA
+"Space",NA,NA,NA
+"Australia",133.775136,-25.274398,NA
+"Canberra, AU",149.1300092,-35.2809368,NA
+"Australia",133.775136,-25.274398,NA
+"New York",-74.0059413,40.7127837,NA
+"",NA,NA,NA
+"Canberra ",149.1300092,-35.2809368,NA
+"Sydney, Australia",151.2092955,-33.8688197,NA
+"",NA,NA,NA
+"Australia",133.775136,-25.274398,NA
+"Australia",133.775136,-25.274398,NA
+"Sydney",151.2092955,-33.8688197,NA
+"Canberra",149.1300092,-35.2809368,NA
+"Sydney, Australia",151.2092955,-33.8688197,NA
+"Melbourne",144.9630576,-37.8136276,NA

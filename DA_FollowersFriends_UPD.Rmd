@@ -1,0 +1,353 @@
+---
+title: "Darren's Friends & Followers"
+author: "S.Mckinnon"
+date: "Jan 2017"
+output: html_document
+---
+
+### *Background*  
+
+When I was trying to complete the analysis of Darren Abbruzzese's twitter feed, largely waiting on history to build up, before having a meaningful dataset to analyse. I started to look at his Freinds and [Followers](https://www.lifewire.com/a-guide-to-followers-on-twitter-2655405). 
+   
+This Document is the result of that work. It should be seen as a companion peice to the main Twitter Analysis work, as it re-uses much of the same data and methods.   
+   
+### *Packages Used*
+
+To do the Data wrangling we have a few key packages; [Stringr](https://cran.r-project.org/web/packages/stringr/vignettes/stringr.html), [reshape2](https://cran.r-project.org/web/packages/reshape2/reshape2.pdf) & [dplyr](https://cran.rstudio.com/web/packages/dplyr/vignettes/introduction.html). We are also dealing with dates/time stamps so [lubridate](https://cran.r-project.org/web/packages/lubridate/lubridate.pdf) will also help.    
+
+To Graph the data [ggplot2](http://ggplot2.org/) and [RColorBrewer](https://cran.r-project.org/web/packages/RColorBrewer/RColorBrewer.pdf) will be key. 
+
+For the world map, I have used [maps](https://cran.r-project.org/web/packages/maps/maps.pdf) and [gridExtra](https://cran.r-project.org/web/packages/gridExtra/index.html) for the layout
+
+```{r,  echo=TRUE, message=FALSE, warning=FALSE, comment=FALSE}
+library(stringr)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(reshape2)
+library(maps)
+library(RColorBrewer)
+library(gridExtra)
+```   
+   
+   
+   
+### *Data Processing*   
+
+The Twitter scrapper was covered in the **Twitter Analysis**, so I wont cover it again here.  
+
+The difference here is that I want to 
+
+```{r, eval=FALSE}
+# load in a list of the screen names of Darren's followers
+DF_friends_DA <- following$screenName
+
+# a loop that work through the list, returns key data, builds a results file and then wrotes it out
+for (i in 1:length(DF_follow_DA)) {
+  # create the empty dat frame used for the results file
+  if (i==1) {res_df <- data.frame(txt_nam = character(),
+                                  cnt_follow = numeric(),
+                                 cnt_friend = numeric())}
+  # builds the result line, cell by cell.  
+  x_txt <- DF_follow_DA[i]
+  # calls Twitter to get that user's followers
+  x_FO <- getUser(DF_follow_DA[i])$followersCount
+  # calls Twitter to get that user's friends
+  x_FR <- getUser(DF_follow_DA[i])$friendsCount
+  # creates that user's results file line
+  x_df <- as.data.frame(cbind(txt_nam = x_txt, cnt_follow =x_FO, cnt_friend =x_FR))
+  # appends that users detail to the results file
+  res_df <- rbind(res_df, x_df)
+  
+  # if the end of the list is reached
+  if(i==length(DF_follow_DA)) {  
+    # add in ANZ flag, based upon that Users account description
+    res_df <- cbind(res_df, ANZ=grepl('anz', followers$description, ignore.case=TRUE))
+    # addin Darren's detail for graphing purposes
+    DA_txt <- getUser(userName)$screenName
+    DA_FO <- getUser(userName)$followersCount
+    DA_FR <- getUser(userName)$friendsCount
+    res_df <- rbind(res_df, as.data.frame(cbind(txt_nam = DA_txt, 
+                                                cnt_follow = DA_FO, 
+                                                cnt_friend = DA_FR, ANZ="ZDA")))
+    
+    # write out the result file locally, including a date reference 
+    write.table(res_df, file=paste0("./Networks/followers_", userName, substr(now(),0,10), ".txt"), 
+                      sep=",", row.names = FALSE)
+    # user message
+    print("job done") }
+
+}
+```
+ 
+This provided summary details of Darren's twitter network.  
+
+I was also interested in their location. Based upon that Users Twitter Location, I could use the Google R Package [ggmap](https://cran.r-project.org/web/packages/ggmap/ggmap.pdf) to get the [Longitude](https://en.wikipedia.org/wiki/Longitude) and [Latitude](https://en.wikipedia.org/wiki/Latitude). This would enable using a map as a graphic. 
+
+This code calls the Google API on a per user basis, which can take some time. So I will only include the key code snippets here. 
+
+```{r, eval=FALSE}
+# set the twitter account for scrapping
+  tmp = getUser('@abbruzzd')
+# call twitter to get the followers listing  
+  followers=twListToDF(tmp$getFollowers())
+# set all of the locations to lower text, making the matching easier  
+  followersLocation = tolower(followers$location)
+# correct for the US Melbourne, returned by default by the Google API.
+  followersLocation <- replace(followersLocation, 
+                               followersLocation=="melbourne", "melbourne, Australia")
+# call the Google API to provide the lat/lon
+  tst_following <- cbind(followingLocation, geocode(followingLocation))
+# join to a refernce table provding the continent details of that location 
+   tst_following <- tst_following %>% left_join(Con_CSV, c("followingLocation"="V1"))
+  
+# the resulting file is then written out to a local file   
+```
+
+For obvious reasons, this analysis will just load from files created by this scrapper.
+
+```{r, echo=FALSE, messages=FALSE, warning=FALSE}
+
+#reference data
+  Con_CSV <- read.csv2("E://R/Twitter/MKDWN/Locations_Conts.csv", header=FALSE, 
+                     sep=",", na.strings = "NA", stringsAsFactors=FALSE)
+  #drop join col to lower
+  Con_CSV$V1 <- tolower(Con_CSV$V1)
+
+#friends and followers  
+  fol_txt <- read.csv2("E://R/Twitter/MKDWN/DA_followers.txt", 
+                       sep=",", na.strings = "NA", stringsAsFactors=FALSE)
+
+  frd_txt <- read.csv2("E://R/Twitter/MKDWN/DA_friends.txt", 
+                       sep=",", na.strings = "NA", stringsAsFactors=FALSE)
+  
+# set references
+  userName = "@abbruzzd"
+
+
+```
+
+These files are the listings of followers and friends as at 14/12/2017, created using the TwitteR commands - [followersCount](https://cran.r-project.org/web/packages/twitteR/twitteR.pdf)
+    & [friendsCount](https://cran.r-project.org/web/packages/twitteR/twitteR.pdf), with Darren's details appended to the end for graphing
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+  head(fol_txt)
+
+  tail(frd_txt)
+
+```
+
+
+Next we need packages to support the analysis. To do the text wrangling we have a couple of key packages;    [Stringr](https://cran.r-project.org/web/packages/stringr/vignettes/stringr.html) & [dplyr](https://cran.rstudio.com/web/packages/dplyr/vignettes/introduction.html) packages are used.  
+
+Then to graph the data;    [ggplot2](http://ggplot2.org/) & [ggrepel](https://cran.r-project.org/web/packages/ggrepel/vignettes/ggrepel.html) 
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+library(stringr)
+library(dplyr)
+library(ggplot2)
+library(ggrepel)
+
+```
+
+With the data loaded, what does it look like?  
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+ggplot(data=fol_txt, aes(x=cnt_follow, y=cnt_friend)) + 
+    ggtitle("Twitter's Darren is following") +
+    xlab("Followers") +
+    ylab("Friends") +
+   geom_point(aes(shape=ANZ, colour=ANZ)) + 
+    geom_text_repel( data=filter(fol_txt, (cnt_follow>=100000 | cnt_friend >= 100000)),
+                     aes(
+                      color = factor(ANZ),
+                       label = txt_nam
+                     ),
+                     point.padding = unit(0.25, "lines"),
+                     box.padding = unit(0.25, "lines"),
+                     nudge_y = 0.1
+    ) +
+    theme(
+      legend.position = "none",
+      axis.title.x = element_text(colour = "grey40"),
+      axis.title.y = element_text(colour = "grey40"),
+      plot.title = element_text(colour = "grey40")
+    )
+
+```
+
+   
+With such outliers in the data, its hard to understand where Darren falls in all this. So I decided to scale and remove the outliers.    
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+  # scale the data  
+  z <- scale(fol_txt[,2:3])
+  
+  #est a spread based upon the scaled mean
+  score <- apply(z, 1, mean)
+  
+  # classify the data based upon spread
+  y <- quantile(score, c(.8,.6,.4,.2))
+  fol_txt$Q[score >=y[1]] <- "A"
+  fol_txt$Q[score < y[1] & score >= y[2]] <- "B"
+  fol_txt$Q[score <y[2] & score >= y[3]] <- "C"
+  fol_txt$Q[score < y[3] & score >= y[4]] <- "D"
+  fol_txt$Q[score < y[4]] <- "E"
+  
+  #subset the data, removing the top and bottom classifications
+  sub_fol_txt <- subset(fol_txt, Q %in% c("B", "C", "D"))
+  
+  #update titles used in the graph
+  sub_fol_txt$lab <- ifelse(sub_fol_txt$cnt_friend>=2000, sub_fol_txt$txt_nam, 
+                            (ifelse(sub_fol_txt$cnt_follow>=2000, sub_fol_txt$txt_nam, 
+                                    (ifelse(sub_fol_txt$txt_nam=="abbruzzd","abbruzzd", ""))))) 
+  
+```
+   
+Now with a limited dataset, we can revisit the graph   
+
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+ ggplot(data=sub_fol_txt, aes(x=cnt_follow, y=cnt_friend)) + 
+    ggtitle("Limited View") +
+    xlab("Followers") +
+    ylab("Friends") +
+    geom_point(aes(shape=ANZ, colour=ANZ)) + 
+    scale_y_continuous(limits = c(0, 3000)) +
+    scale_x_continuous(limits = c(0, 3000)) +
+    geom_text_repel( data=filter(sub_fol_txt, !is.na(lab)),
+      aes(
+        color = factor(ANZ),
+        label = lab
+      ),
+      point.padding = unit(0.25, "lines"),
+      box.padding = unit(0.25, "lines"),
+      nudge_y = 0.1
+    ) +
+    theme(
+      legend.position = "none",
+      axis.title.x = element_text(colour = "grey40"),
+      axis.title.y = element_text(colour = "grey40"),
+      plot.title = element_text(colour = "grey40")
+    )
+ 
+
+```
+   
+While this is a better view, even with these adjustments Darren still struggles to stand out.    
+
+Prehaps its an ANZ thing? I decided to limit the dataset to just people who self-identifed in their description as ANZ.  
+For context I added a liner regression to get a sense of context.       
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+#subset to just ANZ
+  ANZ_fol_txt <- subset(fol_txt, (ANZ==TRUE | txt_nam=="abbruzzd"))
+  ANZ_fol_txt$lab <- ifelse(ANZ_fol_txt$cnt_friend>=1500, ANZ_fol_txt$txt_nam, 
+                            (ifelse(ANZ_fol_txt$cnt_follow>=1500, ANZ_fol_txt$txt_nam, 
+                                    (ifelse(ANZ_fol_txt$txt_nam=="abbruzzd","abbruzzd", ""))))) 
+  
+  #ANZ view
+  ggplot(data=ANZ_fol_txt, aes(x=cnt_follow, y=cnt_friend)) + 
+    ggtitle("Just ANZ") +
+    xlab("Followers") +
+    ylab("Friends") +
+    geom_point(aes(shape=ANZ, colour=ANZ)) + 
+    geom_smooth(method='lm') +
+    geom_text_repel( data=filter(ANZ_fol_txt, !is.na(lab)),
+                     aes(
+                       color = factor(ANZ),
+                       label = lab
+                     ),
+                     point.padding = unit(0.25, "lines"),
+                     box.padding = unit(0.25, "lines"),
+                     nudge_y = 0.1
+    ) +
+    theme(
+      legend.position = "none",
+      axis.title.x = element_text(colour = "grey40"),
+      axis.title.y = element_text(colour = "grey40"),
+      plot.title = element_text(colour = "grey40")
+    )
+
+```
+  
+Ok, prehaps the story is different for Darren's Friends?   
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+
+  ggplot(data=frd_txt, aes(x=cnt_follow, y=cnt_friend)) + 
+    ggtitle("Darren's Twitter friends") +
+    xlab("Followers") +
+    ylab("Friends") +
+    geom_point(aes(shape=ANZ, colour=ANZ)) + 
+    geom_text_repel( data=filter(frd_txt, (cnt_follow>=2500000 | cnt_friend >= 20000)),
+                     aes(
+                        color = factor(ANZ),
+                       label = txt_nam
+                     ),
+                     point.padding = unit(0.25, "lines"),
+                     box.padding = unit(0.25, "lines"),
+                     nudge_y = 0.1
+    ) +
+    theme(
+      legend.position = "none",
+      axis.title.x = element_text(colour = "grey40"),
+      axis.title.y = element_text(colour = "grey40"),
+      plot.title = element_text(colour = "grey40")
+    )
+
+```
+
+Once again, there is a significant skew in the data, so lets try just the ANZ accounts with a liner regression;   
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+  #subset for ANZ
+  ANZ_frd_txt <- subset(frd_txt, (ANZ==TRUE | txt_nam=="abbruzzd"))
+  ANZ_frd_txt$lab <- ifelse(ANZ_frd_txt$cnt_friend>=1500, ANZ_frd_txt$txt_nam, 
+                            (ifelse(ANZ_frd_txt$cnt_follow>=1500, ANZ_frd_txt$txt_nam, 
+                                    (ifelse(ANZ_frd_txt$txt_nam=="abbruzzd","abbruzzd", ""))))) 
+  
+  #ANZ view
+  ggplot(data=ANZ_frd_txt, aes(x=cnt_follow, y=cnt_friend)) + 
+    ggtitle("Just ANZ") +
+    xlab("Followers") +
+    ylab("Friends") +
+    geom_point(aes(shape=ANZ, colour=ANZ)) + 
+    geom_smooth(method='lm') +
+    geom_text_repel( data=filter(ANZ_frd_txt, !is.na(lab)),
+                     aes(
+                       color = factor(ANZ),
+                       label = lab
+                     ),
+                     point.padding = unit(0.25, "lines"),
+                     box.padding = unit(0.25, "lines"),
+                     nudge_y = 0.1
+    ) +
+    theme(
+      legend.position = "none",
+      axis.title.x = element_text(colour = "grey40"),
+      axis.title.y = element_text(colour = "grey40"),
+      plot.title = element_text(colour = "grey40")
+    )
+  
+```
+
+
+#### *Conclusion*
+
+Prehaps the Microsoft API for [Emotion](https://www.microsoft.com/cognitive-services/en-us/emotion-api) using Darrens Twitter photo best expresses this analysis.
+
+![](E:\R\Twitter\MS_Darren_sentiment.png)
+
+
+#### *References*
+This Analysis has used a large number of sources, including the forever helpful [Stackoverflow](http://stackoverflow.com/).   
+
+Some of the main references are;   
+ - The original idea for this is [Jeff's Leaks](http://biostat.jhsph.edu/~jleek/code/twitterMap.R)
+
+ - How to get the [Legend](http://127.0.0.1:27758/library/gridExtra/doc/tableGrob.html) working on the world map   
+ 
+ - How to get a [stacked bar](http://stackoverflow.com/questions/19778612/change-color-for-two-geom-point-in-ggplot2) chart working in ggplot. 
+
+**-- end of document --**
