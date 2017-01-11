@@ -7,36 +7,45 @@ output: html_document
 
 ### *Background*  
 
-When I was trying to complete the analysis of Darren Abbruzzese's twitter feed, largely waiting on history to build up, before having a meaningful dataset to analyse. I started to look at his Freinds and [Followers](https://www.lifewire.com/a-guide-to-followers-on-twitter-2655405). 
+As I waited for history to build up before I could complete the analysis of Darren Abbruzzese's Twitter feed, I started to look at his Friends and [Followers](https://www.lifewire.com/a-guide-to-followers-on-twitter-2655405). 
    
-This Document is the result of that work. It should be seen as a companion peice to the main Twitter Analysis work, as it re-uses much of the same data and methods.   
+This Document is the result of that work. It should be seen as a companion piece to the main Twitter Analysis work, as it re-uses much of the same data and methods.   
    
 ### *Packages Used*
 
-To do the Data wrangling we have a few key packages; [Stringr](https://cran.r-project.org/web/packages/stringr/vignettes/stringr.html), [reshape2](https://cran.r-project.org/web/packages/reshape2/reshape2.pdf) & [dplyr](https://cran.rstudio.com/web/packages/dplyr/vignettes/introduction.html). We are also dealing with dates/time stamps so [lubridate](https://cran.r-project.org/web/packages/lubridate/lubridate.pdf) will also help.    
+To do the Data wrangling we have a few key packages; [Stringr](https://cran.r-project.org/web/packages/stringr/vignettes/stringr.html), [reshape2](https://cran.r-project.org/web/packages/reshape2/reshape2.pdf), [plyr](https://cran.r-project.org/web/packages/plyr/plyr.pdf) & [dplyr](https://cran.rstudio.com/web/packages/dplyr/vignettes/introduction.html).   
+We are also dealing with dates/time stamps so [lubridate](https://cran.r-project.org/web/packages/lubridate/lubridate.pdf) will also help.    
 
-To Graph the data [ggplot2](http://ggplot2.org/) and [RColorBrewer](https://cran.r-project.org/web/packages/RColorBrewer/RColorBrewer.pdf) will be key. 
+To Graph the data [ggplot2](http://ggplot2.org/), [ggrepel](https://cran.r-project.org/web/packages/ggrepel/vignettes/ggrepel.html) and [RColorBrewer](https://cran.r-project.org/web/packages/RColorBrewer/RColorBrewer.pdf) will be key. 
 
-For the world map, I have used [maps](https://cran.r-project.org/web/packages/maps/maps.pdf) and [gridExtra](https://cran.r-project.org/web/packages/gridExtra/index.html) for the layout
+To source the required user location details [ggmap](https://cran.r-project.org/web/packages/ggmap/ggmap.pdf) is used. 
+
+For the world map, I have used [maps](https://cran.r-project.org/web/packages/maps/maps.pdf),  and [gridExtra](https://cran.r-project.org/web/packages/gridExtra/index.html) for the layout
 
 ```{r,  echo=TRUE, message=FALSE, warning=FALSE, comment=FALSE}
+# Data Wrangling
 library(stringr)
 library(dplyr)
-library(ggplot2)
+library(plyr)
 library(lubridate)
 library(reshape2)
-library(maps)
+# Graphing
+library(ggplot2)
+library(ggrepel)
 library(RColorBrewer)
+# Location details
+library(ggmap)
+# World Map
+library(maps)
 library(gridExtra)
 ```   
    
    
-   
-### *Data Processing*   
+### *Get the Data*   
 
-The Twitter scrapper was covered in the **Twitter Analysis**, so I wont cover it again here.  
+The Twitter scrapper was covered in the _**Twitter Analysis**_, so I wont cover it again here.  
 
-The difference here is that I want to 
+For this work I also wanted the details of the individuals who make up Darren's twitter network, including tweet counts and their network details. I created a loop function that would query each user's details from source and provide this.
 
 ```{r, eval=FALSE}
 # load in a list of the screen names of Darren's followers
@@ -47,33 +56,49 @@ for (i in 1:length(DF_follow_DA)) {
   # create the empty dat frame used for the results file
   if (i==1) {res_df <- data.frame(txt_nam = character(),
                                   cnt_follow = numeric(),
-                                 cnt_friend = numeric())}
+                                 cnt_friend = numeric(), 
+                                  cnt_tweet = numeric())}
+  
   # builds the result line, cell by cell.  
   x_txt <- DF_follow_DA[i]
   # calls Twitter to get that user's followers
   x_FO <- getUser(DF_follow_DA[i])$followersCount
   # calls Twitter to get that user's friends
   x_FR <- getUser(DF_follow_DA[i])$friendsCount
-  # creates that user's results file line
-  x_df <- as.data.frame(cbind(txt_nam = x_txt, cnt_follow =x_FO, cnt_friend =x_FR))
+  # call Twitter to get that user's tweet count
+    x_TW <- getUser(DF_friends_DA[i])$statusesCount
+  # creates that user's results file line. 
+    # *.data.frame used to ensure data type is held
+  x_df <- as.data.frame(cbind.data.frame(txt_nam = x_txt, 
+                              cnt_follow =x_FO, 
+                              cnt_friend =x_FR,
+                              cnt_tweet=x_TW))
   # appends that users detail to the results file
-  res_df <- rbind(res_df, x_df)
+  res_df <- rbind.data.frame(res_df, x_df)
   
   # if the end of the list is reached
   if(i==length(DF_follow_DA)) {  
     # add in ANZ flag, based upon that Users account description
-    res_df <- cbind(res_df, ANZ=grepl('anz', followers$description, ignore.case=TRUE))
+    res_df <- cbind.data.frame(res_df, 
+                               ANZ=grepl('anz', followers$description,
+                                         ignore.case=TRUE))
     # addin Darren's detail for graphing purposes
     DA_txt <- getUser(userName)$screenName
     DA_FO <- getUser(userName)$followersCount
     DA_FR <- getUser(userName)$friendsCount
-    res_df <- rbind(res_df, as.data.frame(cbind(txt_nam = DA_txt, 
+    DA_TW <- getUser(userName)$statusesCount
+    # append it to the results set
+    res_df <- rbind.data.frame(res_df, as.data.frame(cbind.data.frame(txt_nam = DA_txt, 
                                                 cnt_follow = DA_FO, 
-                                                cnt_friend = DA_FR, ANZ="ZDA")))
+                                                cnt_friend = DA_FR, 
+                                                cnt_tweet = DA_TW, 
+                                                ANZ="ZDA")))
+    
     
     # write out the result file locally, including a date reference 
-    write.table(res_df, file=paste0("./Networks/followers_", userName, substr(now(),0,10), ".txt"), 
-                      sep=",", row.names = FALSE)
+    write.table(res_df, file=paste0("./Networks/followers_", userName,
+                                    substr(date(),0,10), ".txt"), 
+                sep=",", row.names = FALSE)
     # user message
     print("job done") }
 
@@ -100,7 +125,7 @@ This code calls the Google API on a per user basis, which can take some time. So
   tst_following <- cbind(followingLocation, geocode(followingLocation))
 # join to a refernce table provding the continent details of that location 
    tst_following <- tst_following %>% left_join(Con_CSV, c("followingLocation"="V1"))
-  
+
 # the resulting file is then written out to a local file   
 ```
 
@@ -110,54 +135,197 @@ For obvious reasons, this analysis will just load from files created by this scr
 
 #reference data
   Con_CSV <- read.csv2("E://R/Twitter/MKDWN/Locations_Conts.csv", header=FALSE, 
-                     sep=",", na.strings = "NA", stringsAsFactors=FALSE)
+                     sep=",", na.strings = "NA", 
+                     stringsAsFactors=FALSE)
   #drop join col to lower
   Con_CSV$V1 <- tolower(Con_CSV$V1)
 
-#friends and followers  
+#friends & followers details
   fol_txt <- read.csv2("E://R/Twitter/MKDWN/DA_followers.txt", 
-                       sep=",", na.strings = "NA", stringsAsFactors=FALSE)
-
+                       sep=",", na.strings = "NA", stringsAsFactors=FALSE)  
   frd_txt <- read.csv2("E://R/Twitter/MKDWN/DA_friends.txt", 
                        sep=",", na.strings = "NA", stringsAsFactors=FALSE)
+
+# follower location data
+  sou_followers <- read.csv2("E://R/Twitter/MKDWN/follow.txt" , sep=",",
+                             stringsAsFactors = FALSE,
+                             header=TRUE)
+#drop join col to lower for matching
+  sou_followers$followersLocation <- tolower(sou_followers$followersLocation)
+#add in the continent details from the ref
+  sou_followers <- sou_followers %>% left_join(Con_CSV, c("followersLocation"="V1"))
+#remove the NA lons, enabling the map to be centred on Aus
+  map_followers <- subset(sou_followers, !is.na(lon))
+#update the lat/lon dat types
+  map_followers$lon <- as.numeric(map_followers$lon)
+  map_followers$lat <- as.numeric(map_followers$lat)
   
 # set references
   userName = "@abbruzzd"
-
-
 ```
 
-These files are the listings of followers and friends as at 14/12/2017, created using the TwitteR commands - [followersCount](https://cran.r-project.org/web/packages/twitteR/twitteR.pdf)
-    & [friendsCount](https://cran.r-project.org/web/packages/twitteR/twitteR.pdf), with Darren's details appended to the end for graphing
+### *A Followers Map*  
+
+First lets map Darren's followers to get a sense of the span of influence. 
+
+ - The Code used to center the map on Australia and re-calculate the locations is complex and long, so I wont display it here. Its largely a copy/paste from the work of [Claudia Engel](www.stanford.edu/~cengel/blog), I would encourage people to visit his [blog](www.stanford.edu/~cengel/blog) to get a better understanding.   
+
+```{r, echo=FALSE, messages=FALSE, warning=FALSE}
+### Code by Claudia Engel  March 19, 2012, www.stanford.edu/~cengel/blog
+
+### Recenter on Australia ####
+center <- 144 
+
+# shift coordinates of followers to match the recentering
+map_followers$lon.recent <- ifelse(map_followers$lon < center-180, 
+                                   map_followers$lon+360,
+                                   map_followers$lon)
+
+# used for the worldmap object in library(maps)
+# shift coordinates to recenter worldmap
+worldmap <- map_data ("world")
+worldmap$long.recenter <- ifelse(worldmap$long < center - 180 ,
+                                 worldmap$long + 360, worldmap$long)
+
+# A series of functions to account for the earth not being flat
+### Function to regroup split lines and polygons
+# Takes dataframe, column with long and unique group variable,
+# returns df with added column named group.regroup
+RegroupElements <- function(df, longcol, idcol){
+  g <- rep(1, length(df[,longcol]))
+  if (diff(range(df[,longcol])) > 300) { # check if longitude within group differs more
+    # than 300 deg, ie if element was split
+    d <- df[,longcol] > mean(range(df[,longcol])) # we use the mean to help us separate
+    # the extreme values
+    g[!d] <- 1 # some marker for parts that stay in place
+    # (we cheat here a little, as we do not take into account concave polygons)
+    g[d] <- 2 # parts that are moved
+  }
+  g <- paste(df[, idcol], g, sep=".") # attach to id to create unique group variable
+  # for the dataset
+  df$group.regroup <- g
+  df
+}
+
+### Function to close regrouped polygons
+# Takes dataframe, checks if 1st and last longitude value are the same,
+# if not, inserts first as last and reassigns order variable
+ClosePolygons <- function(df, longcol, ordercol){
+  if (df[1,longcol] != df[nrow(df),longcol]) {
+    tmp <- df[1,]
+    df <- rbind(df,tmp)
+  }
+  o <- c(1: nrow(df)) # rassign the order variable
+  df[,ordercol] <- o
+  df
+}
+
+# now regroup
+worldmap.rg <- ddply(worldmap, .(group), RegroupElements, "long.recenter", "group")
+
+# close polys
+worldmap.cp <- ddply(worldmap.rg, .(group.regroup), ClosePolygons, "long.recenter", "order")
+```
+
+Once all of the re-calculations have been done, we can map the details. 
 
 ```{r, echo=TRUE, messages=FALSE, warning=FALSE}
-  head(fol_txt)
+# plotting library(ggplot2)
+# create the global map object
+worldmap = ggplot(aes(x = long.recenter, y = lat,
+                      col="#191919"), data = worldmap.cp) + 
+  geom_polygon(aes(group = group.regroup), fill="black", colour = "grey65") + 
+  scale_y_continuous(limits = c(-60, 85)) + 
+  ggtitle(paste(userName," Follower Map",sep=""))+
+  coord_equal() +  
+  theme_bw() + 
+  theme(
+    legend.position = "none",
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    plot.title = element_text(colour = "grey65", hjust=0.5),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank() ,
+    panel.border = element_rect(colour = "black"),
+    panel.background = element_rect(fill = "black", colour = "black"),
+    plot.background = element_rect(fill = "black", colour = "black")
+  )
 
-  tail(frd_txt)
+# use colour brewer for better colour range
+# Set up the ploting colors
+cols = brewer.pal(8,"Set1")
+cols=cols[-7]
+
+#attach the colours to each cont
+map_dots = map_followers %>% filter(V2!="Parts Unknown") %>% 
+  select(lon.recent, lat, lon, V2 ) %>% mutate(dot_col = ifelse(V2=="Asia", cols[1],
+                                                            (ifelse(V2=="Africa",cols[2], 
+                                                                    (ifelse(V2=="North America",cols[3], 
+                                                                            (ifelse(V2=="Europe",cols[4],
+                                                                                    ( ifelse(V2=="Australia", 
+                                                                                             cols[6], cols[5]))))))))))
+#make continent a factor for colouring of graph
+map_dots$V2 <- as.factor(map_dots$V2)
+
+#create the legend detail, including the NA's cont
+# create the legend table
+leg_tab <- melt(table(sou_followers$V2))
+colnames(leg_tab) <- c("Continents", "Followers")
+#add in cont colours
+map_col <- map_dots %>% select(V2, dot_col) %>% distinct(V2, dot_col)
+leg_tab <- leg_tab %>% left_join(map_col, c("Continents"="V2"))
+#update unknown to black
+leg_tab[7,3] ="#000000"
+#sort for displa
+leg_tab <- leg_tab %>% arrange(desc(Followers))
+
+# load on the followers data as points, using the continent coloring
+worldmap1 = worldmap + 
+  geom_point(data = map_dots, aes(x=lon.recent, y=lat, color=V2), 
+             pch = 19, size = 3, alpha = .6) +
+  scale_colour_manual(name="",  
+                      values = c("Europe"= "#984EA3",
+                                 "North America"="#4DAF4A",
+                                 "Australia" ="#FFFF33", 
+                                 "Africa" = "#377EB8", 
+                                 "Asia"="#E41A1C", 
+                                 "Oceania"="#FF7F00")) 
+
+#load grid extra for to add on the legend as a summary table
+grid.arrange( worldmap1,
+              tableGrob(leg_tab[,1:2], 
+                        theme = ttheme_minimal(base_size = 8,
+                                               base_colour = leg_tab[,3], 
+                                               core=list(bg_params = list(fill = c("grey75", "grey95"), col=NA), 
+                                                         fg_params=list(fontface="bold")),
+                                               colhead=list(fg_params=list(col="black"))), 
+                        #remove row id's
+                        row = NULL),
+              ncol=2, 
+              widths=c(2.6, 0.8), 
+              clip=FALSE)
 
 ```
 
+The First thing to note is the large number of false or unknown locations, which are classified as _**Parts Unknown**_.      
 
-Next we need packages to support the analysis. To do the text wrangling we have a couple of key packages;    [Stringr](https://cran.r-project.org/web/packages/stringr/vignettes/stringr.html) & [dplyr](https://cran.rstudio.com/web/packages/dplyr/vignettes/introduction.html) packages are used.  
+ - Either the Google API cant find the lon/lat or the user simply hasn't entered this detail into their Twitter profile.  
 
-Then to graph the data;    [ggplot2](http://ggplot2.org/) & [ggrepel](https://cran.r-project.org/web/packages/ggrepel/vignettes/ggrepel.html) 
+Unsurprisingly, Darren has the strongest following in Australia and then a smattering across major locations in the US and Europe. While its geographically diverse, its also sparse.    
 
-```{r, echo=TRUE, messages=FALSE, warning=FALSE}
-library(stringr)
-library(dplyr)
-library(ggplot2)
-library(ggrepel)
+### *Friends and Followers*
 
-```
-
-With the data loaded, what does it look like?  
+Twitter is made up of both Friends and Followers. I wanted to see how Darren stood within his own network. First who he is following.   
 
 ```{r, echo=TRUE, messages=FALSE, warning=FALSE}
 ggplot(data=fol_txt, aes(x=cnt_follow, y=cnt_friend)) + 
-    ggtitle("Twitter's Darren is following") +
+    ggtitle("Twitter's Darren is Following") +
     xlab("Followers") +
     ylab("Friends") +
    geom_point(aes(shape=ANZ, colour=ANZ)) + 
+  # limited data labels
     geom_text_repel( data=filter(fol_txt, (cnt_follow>=100000 | cnt_friend >= 100000)),
                      aes(
                       color = factor(ANZ),
@@ -171,7 +339,7 @@ ggplot(data=fol_txt, aes(x=cnt_follow, y=cnt_friend)) +
       legend.position = "none",
       axis.title.x = element_text(colour = "grey40"),
       axis.title.y = element_text(colour = "grey40"),
-      plot.title = element_text(colour = "grey40")
+      plot.title = element_text(colour = "grey40", hjust=0.5)
     )
 
 ```
@@ -180,13 +348,11 @@ ggplot(data=fol_txt, aes(x=cnt_follow, y=cnt_friend)) +
 With such outliers in the data, its hard to understand where Darren falls in all this. So I decided to scale and remove the outliers.    
 
 ```{r, echo=TRUE, messages=FALSE, warning=FALSE}
-  # scale the data  
+# scale the data  
   z <- scale(fol_txt[,2:3])
-  
-  #est a spread based upon the scaled mean
+#classify based upon the scaled mean
   score <- apply(z, 1, mean)
-  
-  # classify the data based upon spread
+# classify the data based upon spread
   y <- quantile(score, c(.8,.6,.4,.2))
   fol_txt$Q[score >=y[1]] <- "A"
   fol_txt$Q[score < y[1] & score >= y[2]] <- "B"
@@ -194,29 +360,31 @@ With such outliers in the data, its hard to understand where Darren falls in all
   fol_txt$Q[score < y[3] & score >= y[4]] <- "D"
   fol_txt$Q[score < y[4]] <- "E"
   
-  #subset the data, removing the top and bottom classifications
+#subset the data, removing the top and bottom classifications
   sub_fol_txt <- subset(fol_txt, Q %in% c("B", "C", "D"))
   
-  #update titles used in the graph
+#update titles used in the graph
   sub_fol_txt$lab <- ifelse(sub_fol_txt$cnt_friend>=2000, sub_fol_txt$txt_nam, 
                             (ifelse(sub_fol_txt$cnt_follow>=2000, sub_fol_txt$txt_nam, 
                                     (ifelse(sub_fol_txt$txt_nam=="abbruzzd","abbruzzd", ""))))) 
   
 ```
    
-Now with a limited dataset, we can revisit the graph   
+Now with a limited data set, we can re-visit the graph. For reference, ANZ accounts have been coloured.   
 
 
-```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+```{r, echo=FALSE, messages=FALSE, warning=FALSE}
  ggplot(data=sub_fol_txt, aes(x=cnt_follow, y=cnt_friend)) + 
-    ggtitle("Limited View") +
+    ggtitle("Twitter's Darren is Following - Limited View") +
     xlab("Followers") +
     ylab("Friends") +
+    # colour ANZ accounts
     geom_point(aes(shape=ANZ, colour=ANZ)) + 
     scale_y_continuous(limits = c(0, 3000)) +
     scale_x_continuous(limits = c(0, 3000)) +
     geom_text_repel( data=filter(sub_fol_txt, !is.na(lab)),
       aes(
+        #colour the ANZ text
         color = factor(ANZ),
         label = lab
       ),
@@ -228,55 +396,18 @@ Now with a limited dataset, we can revisit the graph
       legend.position = "none",
       axis.title.x = element_text(colour = "grey40"),
       axis.title.y = element_text(colour = "grey40"),
-      plot.title = element_text(colour = "grey40")
+      plot.title = element_text(colour = "grey40",hjust=0.5)
     )
- 
-
 ```
    
 While this is a better view, even with these adjustments Darren still struggles to stand out.    
 
-Prehaps its an ANZ thing? I decided to limit the dataset to just people who self-identifed in their description as ANZ.  
-For context I added a liner regression to get a sense of context.       
+Ok, perhaps the story is different for the user's Darren follows?  
 
-```{r, echo=TRUE, messages=FALSE, warning=FALSE}
-#subset to just ANZ
-  ANZ_fol_txt <- subset(fol_txt, (ANZ==TRUE | txt_nam=="abbruzzd"))
-  ANZ_fol_txt$lab <- ifelse(ANZ_fol_txt$cnt_friend>=1500, ANZ_fol_txt$txt_nam, 
-                            (ifelse(ANZ_fol_txt$cnt_follow>=1500, ANZ_fol_txt$txt_nam, 
-                                    (ifelse(ANZ_fol_txt$txt_nam=="abbruzzd","abbruzzd", ""))))) 
-  
-  #ANZ view
-  ggplot(data=ANZ_fol_txt, aes(x=cnt_follow, y=cnt_friend)) + 
-    ggtitle("Just ANZ") +
-    xlab("Followers") +
-    ylab("Friends") +
-    geom_point(aes(shape=ANZ, colour=ANZ)) + 
-    geom_smooth(method='lm') +
-    geom_text_repel( data=filter(ANZ_fol_txt, !is.na(lab)),
-                     aes(
-                       color = factor(ANZ),
-                       label = lab
-                     ),
-                     point.padding = unit(0.25, "lines"),
-                     box.padding = unit(0.25, "lines"),
-                     nudge_y = 0.1
-    ) +
-    theme(
-      legend.position = "none",
-      axis.title.x = element_text(colour = "grey40"),
-      axis.title.y = element_text(colour = "grey40"),
-      plot.title = element_text(colour = "grey40")
-    )
-
-```
-  
-Ok, prehaps the story is different for Darren's Friends?   
-
-```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+```{r, echo=FALSE, messages=FALSE, warning=FALSE}
 
   ggplot(data=frd_txt, aes(x=cnt_follow, y=cnt_friend)) + 
-    ggtitle("Darren's Twitter friends") +
+    ggtitle("Darren's Twitter Friends") +
     xlab("Followers") +
     ylab("Friends") +
     geom_point(aes(shape=ANZ, colour=ANZ)) + 
@@ -293,14 +424,14 @@ Ok, prehaps the story is different for Darren's Friends?
       legend.position = "none",
       axis.title.x = element_text(colour = "grey40"),
       axis.title.y = element_text(colour = "grey40"),
-      plot.title = element_text(colour = "grey40")
+      plot.title = element_text(colour = "grey40", hjust=0.5)
     )
 
 ```
 
-Once again, there is a significant skew in the data, so lets try just the ANZ accounts with a liner regression;   
+This time the skew is even worse. So lets try just the ANZ accounts with a linear regression.    
 
-```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+```{r, echo=FALSE, messages=FALSE, warning=FALSE}
   #subset for ANZ
   ANZ_frd_txt <- subset(frd_txt, (ANZ==TRUE | txt_nam=="abbruzzd"))
   ANZ_frd_txt$lab <- ifelse(ANZ_frd_txt$cnt_friend>=1500, ANZ_frd_txt$txt_nam, 
@@ -309,7 +440,7 @@ Once again, there is a significant skew in the data, so lets try just the ANZ ac
   
   #ANZ view
   ggplot(data=ANZ_frd_txt, aes(x=cnt_follow, y=cnt_friend)) + 
-    ggtitle("Just ANZ") +
+    ggtitle("Darren's Twitter Friends - Just ANZ") +
     xlab("Followers") +
     ylab("Friends") +
     geom_point(aes(shape=ANZ, colour=ANZ)) + 
@@ -327,27 +458,92 @@ Once again, there is a significant skew in the data, so lets try just the ANZ ac
       legend.position = "none",
       axis.title.x = element_text(colour = "grey40"),
       axis.title.y = element_text(colour = "grey40"),
-      plot.title = element_text(colour = "grey40")
+      plot.title = element_text(colour = "grey40", hjust=0.5)
     )
   
 ```
 
+### *Content vs Friends and Followers*
 
-#### *Conclusion*
+I wanted to understand if there is a relationship between content and network.  
 
-Prehaps the Microsoft API for [Emotion](https://www.microsoft.com/cognitive-services/en-us/emotion-api) using Darrens Twitter photo best expresses this analysis.
+Once again, I am using the ANZ only data sets. First the Twitter account's Darren is following.        
 
-![](E:\R\Twitter\MS_Darren_sentiment.png)
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+
+#subset to just ANZ
+  ANZ_fol_txt <- subset(fol_txt, (ANZ==TRUE | txt_nam=="abbruzzd"))
+  ANZ_fol_txt$lab <- ifelse(ANZ_fol_txt$cnt_friend>=1500, ANZ_fol_txt$txt_nam, 
+                            (ifelse(ANZ_fol_txt$cnt_follow>=1500, ANZ_fol_txt$txt_nam, 
+                                    (ifelse(ANZ_fol_txt$txt_nam=="abbruzzd","abbruzzd", ""))))) 
+
+  # graph followers vs. Tweet count
+  ggplot(data=ANZ_fol_txt, aes(x=cnt_follow, y=cnt_tweet)) + 
+    ggtitle("ANZ Twitter's Darren is Following - Tweet Relationship") +
+    xlab("Followers") +
+    ylab("Tweet Count") +
+    geom_point(aes(shape=ANZ, colour=ANZ)) +
+    # addin Linear regression model  
+    geom_smooth(method='lm') +
+    geom_text_repel( data=filter(ANZ_fol_txt, !is.na(lab)),
+                     aes(
+                       color = factor(ANZ),
+                       label = lab
+                     ),
+                     point.padding = unit(0.25, "lines"),
+                     box.padding = unit(0.25, "lines"),
+                     nudge_y = 0.1
+    ) +
+    theme(
+      legend.position = "none",
+      axis.title.x = element_text(colour = "grey40"),
+      axis.title.y = element_text(colour = "grey40"),
+      plot.title = element_text(colour = "grey40", hjust=0.5)
+    )
+
+```
+  
+Next the Twitter account's that are following Darren.   
+
+```{r, echo=FALSE, messages=FALSE, warning=FALSE}
+  ggplot(data=ANZ_frd_txt, aes(x=cnt_follow, y=cnt_tweet)) + 
+    ggtitle("Darren's ANZ Twitter Friends - Tweet Relationship") +
+    xlab("Followers") +
+    ylab("Tweet Count") +
+    geom_point(aes(shape=ANZ, colour=ANZ)) + 
+    geom_smooth(method='lm') +
+    geom_text_repel( data=filter(ANZ_frd_txt, !is.na(lab)),
+                     aes(
+                       color = factor(ANZ),
+                       label = lab
+                     ),
+                     point.padding = unit(0.25, "lines"),
+                     box.padding = unit(0.25, "lines"),
+                     nudge_y = 0.1
+    ) +
+    theme(
+      legend.position = "none",
+      axis.title.x = element_text(colour = "grey40"),
+      axis.title.y = element_text(colour = "grey40"),
+      plot.title = element_text(colour = "grey40", hjust=0.5)
+    )
+  
+```
+
+This data would suggest there is a more complex relationship between a twitter feed and the network it forms part of than can be represented by a simple linear regression. But that's another piece of work.   
 
 
 #### *References*
 This Analysis has used a large number of sources, including the forever helpful [Stackoverflow](http://stackoverflow.com/).   
 
-Some of the main references are;   
- - The original idea for this is [Jeff's Leaks](http://biostat.jhsph.edu/~jleek/code/twitterMap.R)
+Some of the main references are;      
+  
+ - The original idea for this is [Jeff's Leaks](http://biostat.jhsph.edu/~jleek/code/twitterMap.R).  
+ 
+  - How to [re-centre a map](www.stanford.edu/~cengel/blog).
 
- - How to get the [Legend](http://127.0.0.1:27758/library/gridExtra/doc/tableGrob.html) working on the world map   
+ - How to get the [Legend](http://127.0.0.1:27758/library/gridExtra/doc/tableGrob.html) working on the world map.   
  
  - How to get a [stacked bar](http://stackoverflow.com/questions/19778612/change-color-for-two-geom-point-in-ggplot2) chart working in ggplot. 
 
-**-- end of document --**
+-**-- end of document --**_

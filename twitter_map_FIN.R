@@ -17,7 +17,7 @@ Con_CSV <- read.csv2("E://R/Twitter/Locations_Conts.csv", header=FALSE,
 Con_CSV$V1 <- tolower(Con_CSV$V1)
 
 #read in data
-sou_followers <- read.csv2("E://R/Twitter/follow_Mon Jan 09.txt" , sep=",", stringsAsFactors = FALSE,
+sou_followers <- read.csv2("E://R/Twitter/MKDWN/follow.txt" , sep=",", stringsAsFactors = FALSE,
                            header=TRUE)
 
 # manipulate datasets
@@ -99,8 +99,7 @@ worldmap.rg <- ddply(worldmap, .(group), RegroupElements, "long.recenter", "grou
 # close polys
 worldmap.cp <- ddply(worldmap.rg, .(group.regroup), ClosePolygons, "long.recenter", "order") 
 
-#plotting 
-library(ggplot2)
+#plotting library(ggplot2)
 
 # create the global map object
 worldmap = ggplot(aes(x = long.recenter, y = lat,

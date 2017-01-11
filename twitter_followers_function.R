@@ -95,10 +95,12 @@ Con_CSV$V1 <- tolower(Con_CSV$V1)
   #updated to DF
   followers=twListToDF(tmp$getFollowers())
   followersLocation = tolower(followers$location)
+  
   #correct for US
   followersLocation <- replace(followersLocation, followersLocation=="melbourne", "melbourne, Australia")
   following = twListToDF(tmp$getFriends())
   followingLocation = following$location
+    
   #correct for US
   followingLocation <- replace(followingLocation, followingLocation=="melbourne", "melbourne, Australia")
   
@@ -123,7 +125,7 @@ Con_CSV$V1 <- tolower(Con_CSV$V1)
   tst_following <- cbind(followingLocation, geocode(followingLocation),dist=NA)
   
   write.table(tst_followers, file=paste0("./follow_", substr(date(),0,10), ".txt"), sep=",", row.names = FALSE)
-  write.table(tst_following, file=paste0("./foling_", substr(date(),0,10), ".txt"), sep=",", row.names = FALSE)
+  write.table(tst_following, file=paste0("./friends_", substr(date(),0,10), ".txt"), sep=",", row.names = FALSE)
   
   #find the distance between the points
   for (i in 1:nrow(tst_followers)) {
@@ -398,28 +400,34 @@ for (i in 1:length(DF_follow_DA)) {
   
   if (i==1) {res_df <- data.frame(txt_nam = character(),
                                   cnt_follow = numeric(),
-                                 cnt_friend = numeric())}
+                                 cnt_friend = numeric(), 
+                                  cnt_tweet = numeric())}
     
   x_txt <- DF_follow_DA[i]
   x_FO <- getUser(DF_follow_DA[i])$followersCount
   x_FR <- getUser(DF_follow_DA[i])$friendsCount
+  x_TW <- getUser(DF_follow_DA[i])$statusesCount
   
-  x_df <- as.data.frame(cbind(txt_nam = x_txt, cnt_follow =x_FO, cnt_friend =x_FR))
-  res_df <- rbind(res_df, x_df)
+  x_df <- as.data.frame(cbind.data.frame(txt_nam = x_txt, cnt_follow =x_FO, 
+                              cnt_friend =x_FR, cnt_tweet =x_TW))
+  res_df <- rbind.data.frame(res_df, x_df)
   
   if(i==length(DF_follow_DA)) {  
     # add in ANZ flag
-    res_df <- cbind(res_df, ANZ=grepl('anz', followers$description, ignore.case=TRUE))
+    res_df <- cbind.data.frame(res_df, ANZ=grepl('anz', followers$description, ignore.case=TRUE))
     # addin DA
     DA_txt <- getUser(userName)$screenName
     DA_FO <- getUser(userName)$followersCount
     DA_FR <- getUser(userName)$friendsCount
-    res_df <- rbind(res_df, as.data.frame(cbind(txt_nam = DA_txt, 
+    DA_TW <- getUser(userName)$statusesCount
+    res_df <- rbind.data.frame(res_df, as.data.frame(cbind.data.frame(txt_nam = DA_txt, 
                                                 cnt_follow = DA_FO, 
-                                                cnt_friend = DA_FR, ANZ="ZDA")))
+                                                cnt_friend = DA_FR, 
+                                                cnt_tweet = DA_TW, 
+                                                ANZ="ZDA" )))
     
     # save file
-    write.table(res_df, file=paste0("./Networks/followers_", userName, substr(now(),0,10), ".txt"), 
+    write.table(res_df, file=paste0("./Networks/followers_", userName, substr(date(),0,10), ".txt"), 
                       sep=",", row.names = FALSE)
     print("job done") }
 
@@ -432,30 +440,48 @@ for (i in 1:length(DF_friends_DA)) {
   
   if (i==1) {res_df <- data.frame(txt_nam = character(),
                                   cnt_follow = numeric(),
-                                  cnt_friend = numeric())}
+                                  cnt_friend = numeric(), 
+                                  cnt_tweet = numeric())}
   
   x_txt <- DF_friends_DA[i]
-  x_FO <- getUser(DF_friends_DA[i])$followersCount
-  x_FR <- getUser(DF_friends_DA[i])$friendsCount
+  x_FO <- as.numeric(getUser(DF_friends_DA[i])$followersCount)
+  x_FR <- as.numeric(getUser(DF_friends_DA[i])$friendsCount)
+  x_TW <- as.numeric(getUser(DF_friends_DA[i])$statusesCount)
   
-  x_df <- as.data.frame(cbind(txt_nam = x_txt, cnt_follow =x_FO, cnt_friend =x_FR))
-  res_df <- rbind(res_df, x_df)
+  x_df <- cbind.data.frame(txt_nam = x_txt, cnt_follow =as.numeric(x_FO), 
+                              cnt_friend =x_FR, cnt_tweet=x_TW)
+  res_df <- rbind.data.frame(res_df, x_df)
   
   if(i==length(DF_friends_DA)) {  
     # add in ANZ flag
-    res_df <- cbind(res_df, ANZ=grepl('anz', following$description, ignore.case=TRUE))
+    res_df <- cbind.data.frame(res_df, ANZ=grepl('anz', following$description, ignore.case=TRUE))
     # addin DA
     DA_txt <- getUser(userName)$screenName
-    DA_FO <- getUser(userName)$followersCount
-    DA_FR <- getUser(userName)$friendsCount
-    res_df <- rbind(res_df, as.data.frame(cbind(txt_nam = DA_txt, 
+    DA_FO <- as.numeric(getUser(userName)$followersCount)
+    DA_FR <- as.numeric(getUser(userName)$friendsCount)
+    DA_TW <- as.numeric(getUser(userName)$statusesCount)
+    res_df <- rbind.data.frame(res_df, as.data.frame(cbind.data.frame(txt_nam = DA_txt, 
                                                 cnt_follow = DA_FO, 
-                                                cnt_friend = DA_FR, ANZ="ZDA")))
+                                                cnt_friend = DA_FR, 
+                                                cnt_tweet = DA_TW, 
+                                                ANZ="ZDA")))
     
     # save file
-    write.table(res_df, file=paste0("./Networks/friends_", userName, substr(now(),0,10), ".txt"), 
+    write.table(res_df, file=paste0("./Networks/friends_", userName, substr(date(),0,10), ".txt"), 
                 sep=",", row.names = FALSE)
     print("job done") }
   
   print(paste("end ", i))
 }
+
+#############################################
+# relationship between tweets & followers
+###############################################
+
+
+str(res_df)
+
+ggplot(data=res_df, aes(cnt_tweet, cnt_friend)) + geom_point()
+
+
+
