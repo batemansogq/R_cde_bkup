@@ -125,6 +125,13 @@ labCol[labCol %% 5 != 0] <- NA
 #drop a factor in DF to numeric without losing accuracy
 res_df$cnt_friend <- as.numeric(levels(res_df$cnt_friend))[res_df$cnt_friend]
 
+# put a value into pre-defined bin
+  cut_levels <- c(1, 5, 9, 12, 16, 18, 22)
+  pickup_datetime <- ymd_hms(data$tpep_pickup_datetime, tz = "UTC")
+  pickup_hour <- addNA(cut(hour(pickup_datetime), cut_levels))
+  #addNA = everything not in levels, bin into another bin
+  # cut = base function for splitting data
+
 #==============================================================================
 #table function
 #basic summary table, 2 dim with count of obs
@@ -132,6 +139,10 @@ table(mvt$Year, mvt$Arrest)
 
 #flip a tables columns and rows - melt
 leg_tab <- melt(table(sou_followers$V2))
+
+# use tidyr package spread function to long wide
+rxs2 <- tidyr::spread(rxs2$categorical[[1]], key = 'pickup_hour', value = 'Counts')
+
 
 #subset table
 table(mvt$Year, mvt$Arrest)[1,2]
