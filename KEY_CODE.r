@@ -158,6 +158,21 @@ table(CPS$Region, is.na(CPS$MetroAreaCode))[4,2]/table(CPS$Region)[4]
 sort(tapply(is.na(CPS$MetroAreaCode), CPS$State, mean))
 #==============================================================================
 
+# split columns out into unique value cols with bindary values
+# dummy text fields
+charcolumns <- names(titanicDF[sapply(titanicDF, is.factor)])
+for (colname in charcolumns) {
+  print(paste(colname,length(unique(titanicDF[,colname]))))
+  for (newcol in unique(titanicDF[,colname])) {
+    if (!is.na(newcol))
+      titanicDF[,paste0(colname,"_",newcol)] <- ifelse(titanicDF[,colname]==newcol,1,0)
+  }
+  titanicDF <- titanicDF[,setdiff(names(titanicDF),colname)]
+}
+
+
+#==================================================================================
+
 #dplyr example
 	hflights %>%
 	  mutate(RealTime = ActualElapsedTime + 100, mph = Distance / RealTime * 60) %>%
