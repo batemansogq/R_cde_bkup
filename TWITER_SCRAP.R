@@ -9,8 +9,8 @@ lapply(x, require, character.only = TRUE)
 #############
 # step #1 - get twitter auth
 
-#key="r2k8cTPxPSK0Pm10npxQbgoeo"
-#secret="D0kjAuinPHBTbpYsDvG4dPLqm28e4QAMoqm6F1iQfIwBSCJ7Xo"
+#key=
+#secret=
 setwd("E://R/Twitter")
 
 #download.file(url="http://curl.haxx.se/ca/cacert.pem",
@@ -25,10 +25,10 @@ setwd("E://R/Twitter")
 #setup_twitter_oauth(api_key, api_secret, token, token_secret)
 #save(authenicate, file="twitter authenication.Rdata")
 
-api_key <- "r2k8cTPxPSK0Pm10npxQbgoeo" # From dev.twitter.com
-api_secret <- "D0kjAuinPHBTbpYsDvG4dPLqm28e4QAMoqm6F1iQfIwBSCJ7Xo" # From dev.twitter.com
-token <- "4855645822-Qzvj2aDBlzlpLe6bdSrB4Lg4KsDcxgaMSubI3fK" # From dev.twitter.com
-token_secret <- "6CFzYCEkmutscjY4Z6zuoSDjsNoXN2MHVbeCiIF56Ydr7" # From dev.twitter.com
+api_key <- "" # From dev.twitter.com
+api_secret <- "" # From dev.twitter.com
+token <- " " # From dev.twitter.com
+token_secret <- " " # From dev.twitter.com
 
 # Create Twitter Connection
 setup_twitter_oauth(api_key, api_secret, token, token_secret)
