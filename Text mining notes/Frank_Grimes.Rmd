@@ -1,0 +1,221 @@
+---
+title: "Frank Grimes - Sentiment Analysis"
+author: "S.Mckinnon"
+date: "July 2016"
+output: html_document
+---
+![](http://oldies.scdn5.secure.raxcdn.com/i/tv-show/the-simpsons-tv-3344.jpg)
+
+### *Background*  
+
+In Season 8, epi 23 of the [Simpsons](<https://en.wikipedia.org/wiki/Homer%27s_Enemy>) contained one of the most memorable characters, **Frank Grimes**.
+
+![](http://vignette2.wikia.nocookie.net/simpsons/images/2/23/Frank_Grimes_Tapped_Out.png/revision/latest?cb=20150523130350)
+
+_"The episode explores the comic possibilities of a realistic character with a strong work ethic hired for a job where he has to work alongside a man like Homer.... Despite Homer's attempts to befriend him, Grimes is angered and irritated by Homer's laziness and incompetence despite leading a comfortable life. He eventually declares himself Homer's enemy."_ - [Wiki](<https://en.wikipedia.org/wiki/Homer%27s_Enemy>)
+
+
+Which begs the question, whats the text sentiment of this episode?
+
+![](http://www.theandrewblog.net/wp-content/uploads/2015/05/Frank-Grimes-and-Homer-2.jpg)
+
+### *Data Processing*   
+
+The first step is to get source the [episode script](http://www.springfieldspringfield.co.uk/view_episode_scripts.php?tv-show=the-simpsons&episode=s08e23) and load it in for processing. 
+
+```{r, echo=FALSE, messages=FALSE, warning=FALSE}
+setwd("E://R/Text mining notes")
+#import data, use 2 to get a complete line.
+simp <- read.csv2("SIMP_s08_e23.txt", 
+                  header=FALSE,
+                  na.strings=c("-", "[", "]"),
+                  blank.lines.skip=TRUE)
+
+```
+
+Once loaded some pre-processing of the data is required. For this the [Stringr](https://cran.r-project.org/web/packages/stringr/vignettes/stringr.html) & [dplyr](https://cran.rstudio.com/web/packages/dplyr/vignettes/introduction.html) packages are used.  
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+library(stringr)
+library(dplyr)
+#remove special chars
+simp$V1 <- str_replace_all(simp$V1, "[^[:alnum:]]", " ")
+#update the column name
+colnames(simp) <- c( "Lines")
+```
+
+Next comes the [TM](https://cran.r-project.org/web/packages/tm/vignettes/tm.pdf) and the [SnowballC](https://cran.r-project.org/web/packages/SnowballC/index.html) packages, which is used to clean up the text and make it easier to analyse.  
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+library(tm)
+library(SnowballC)
+#create a corpus for analysis
+simp_cp <- Corpus(VectorSource(simp))
+#clean up corpus
+simp_cp <- tm_map(simp_cp, tolower)
+simp_cp <- tm_map(simp_cp, PlainTextDocument)
+simp_cp <- tm_map(simp_cp, removePunctuation)
+simp_cp <- tm_map(simp_cp, removeNumbers)
+simp_cp <- tm_map(simp_cp, removeWords, stopwords("english"))
+# stem the corpus
+simp_cp <- tm_map(simp_cp, stemDocument)
+#clean out the white spaces
+simp_cp <- tm_map(simp_cp, stripWhitespace)
+# review the resulting output
+head(simp_cp)
+
+```
+
+This raw data will need to be converted in a [Document Term Matrix](https://en.wikipedia.org/wiki/Document-term_matrix) for a more indepth review.  
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+#make into matrix
+simp_dtm <-  DocumentTermMatrix(simp_cp)
+#most common terms
+head(sort(colSums(as.matrix(simp_dtm)), decreasing=TRUE),20)
+
+```
+
+This can be best represented in a [Word Cloud](https://georeferenced.wordpress.com/2013/01/15/rwordcloud/)
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+library(wordcloud)
+#use colour brewer for platte options
+library(RColorBrewer)
+
+#wordcloud requires a seed to reproduce outcomes
+set.seed(142)   
+
+wordcloud(simp_cp, scale=c(5,0.5), max.words=100, random.order=FALSE, rot.per=0.35, use.r.layout=FALSE, colors=brewer.pal(8, "Dark2"))
+```
+
+But what of the sentiment?   
+
+### *Option 1 - Basic Word Matching*   
+
+The first option is basic wording match to a positive and negative lexicon, the summary of which describes the sentiment. This approach is detailed [here](http://www.r-bloggers.com/sentiment-analysis-on-donald-trump-using-r-and-tableau/).   
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+#load in the pos & neg lexicons
+positives= readLines("positive-words.txt")
+negatives = readLines("negative-words.txt")
+# write a basic function to calc each rows setiment
+sentiment_scores = function(df, positive_words, negative_words){
+    df_score <-data.frame(Score=integer())
+  
+    for (i in 1:nrow(df)) {
+      #make lower
+      df_l = tolower(df[i,])
+      # split sentence into words with str_split function from stringr package
+      word_list = str_split(df_l, " ")
+      words = unlist(word_list)
+      # get the position of the matched term or NA
+      # we just want a TRUE/FALSE
+      positive_matches = sum(!is.na(match(words,positives)), na.rm=TRUE)
+      negative_matches = sum(!is.na(match(words,negatives)), na.rm=TRUE)
+      #get scores
+      score = sum(positive_matches) - sum(negative_matches)
+      df_score[i,] <- score 
+         
+    }
+    return(df_score) 
+}
+
+```
+
+
+Then simply run the function and graph the results, using [ggplot](http://docs.ggplot2.org/current/).
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+#run the function
+score = sentiment_scores(simp, positives, negatives)
+#append the score to the data
+simp$score=score
+
+#Let's plot a histogram of the sentiment score:
+library(ggplot2)
+qplot(simp$score, geom="histogram")
+```
+
+Overall this approach describes the sentiment as neutral to slighly positive. But there are a number of issues with this, i.e. context, the word listing in the lexcion, sarcarism etc...So next I decided to have a look at a more robust approach. 
+
+
+### *Option 2 - A Setiment package*   
+
+With the idea from the [Julia Silge Blog](http://juliasilge.com/blog/Joy-to-the-World/), the [Syuzhet package](https://cran.r-project.org/web/packages/syuzhet/vignettes/syuzhet-vignette.html) which has the goal of _"..quickly extract plot and sentiment data from your own text files.."_    
+
+First step, once again is to bring the data in and pre-process it.
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+library(syuzhet)
+#import data, use 2 to get a complete line.
+simp <- read.csv2("SIMP_s08_e23.txt", 
+                  header=FALSE,
+                  na.strings=c("-", "[", "]"),
+                  blank.lines.skip=TRUE)
+#remove special chars, as the full stop is required for the sentence structure function.
+simp1 <- gsub("\\[", " ", simp$V1)
+simp1 <- gsub("\\]", " ", simp1)
+simp1 <- gsub("-", " ", simp1)
+simp1 <- gsub("\\(", " ", simp1)
+simp1 <- gsub("\n", " ", simp1)
+
+# get sentence structure
+simp_sent <- get_sentences(simp1)
+
+
+```
+
+
+From this structure, we can get the sentiment stats. 
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+#get sentiment
+simp_sentiment <- get_nrc_sentiment(simp_sent)
+
+head(simp_sentiment)
+
+```
+
+From here, the data can be transformed for graphing.    
+
+```{r, echo=TRUE, messages=FALSE, warning=FALSE}
+#make a data frame of the totals
+sentimentTotals <- data.frame(colSums(simp_sentiment[,c(1:8)]))
+#give it a meaningful name
+names(sentimentTotals) <- "count"
+#create the graph data frame
+sentimentTotals <- cbind("sentiment" = rownames(sentimentTotals), sentimentTotals)
+rownames(sentimentTotals) <- NULL
+#create the bar chart
+ggplot(data = sentimentTotals, aes(x = sentiment, y = count)) +
+  geom_bar(aes(fill = sentiment), stat = "identity") +
+  theme(legend.position = "none") +
+  xlab("Sentiment") + ylab("Total Count") + ggtitle("Total Sentiment Score each sentence in script")
+
+```
+
+
+#### *Conclusion*
+
+_"To prove Homer's lack of intelligence, he tricks Homer into entering a nuclear power plant design contest intended for children.... At the contest, Grimes is shocked when Homer's model easily wins..The audience's applause and cheers for Homer cause Grimes to finally snap and he runs amok through the plant... sarcastically declares that he does not need safety gloves, grabs the high voltage wires and is killed by electrocution. At Grimes' funeral, Homer falls asleep ...causing all the attending mourners to laugh as Grimes' casket is lowered into the ground."_
+
+Despite this, both approaches suggest this episode has a neutral to slightly positive sentiment.
+
+![](https://i.ytimg.com/vi/axHoy0hnQy8/hqdefault.jpg)
+
+
+#### *Notes*
+The Key notes of this analysis are:  
+
+- The full episode description can be found [here](<https://en.wikipedia.org/wiki/Homer%27s_Enemy>)  
+
+- The idea for this can be found here - [Text Mining R on Vikings](http://www.r-bloggers.com/text-mining-with-r-on-vikings-episode-scripts/)
+
+- The initial sentiment analysis can be found here  - [Sentiment Analysis on Trump Tweets](http://www.r-bloggers.com/sentiment-analysis-on-donald-trump-using-r-and-tableau/)
+
+- The introduction for the 2nd sentiment analysis approach can be found here - [Julia Silge Blog](http://juliasilge.com/blog/Joy-to-the-World/)
+
+- The [Syuzhet package](https://cran.r-project.org/web/packages/syuzhet/vignettes/syuzhet-vignette.html) is described in this summary.
+
+**-- end of document --**

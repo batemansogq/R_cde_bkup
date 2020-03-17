@@ -1,0 +1,9 @@
+https://rstudio-pubs-static.s3.amazonaws.com/31867_8236987cf0a8444e962ccd2aec46d9c3.html
+
+http://www.r-bloggers.com/text-mining-with-r-on-vikings-episode-scripts/
+
+http://www.springfieldspringfield.co.uk/view_episode_scripts.php?tv-show=the-simpsons&episode=s08e23
+
+https://cran.r-project.org/web/packages/tidytext/index.html
+ 
+http://juliasilge.com/blog/Joy-to-the-World/
